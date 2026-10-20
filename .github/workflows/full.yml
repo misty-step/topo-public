@@ -1,23 +1,150 @@
-name: Source proof bootstrap
+name: Full source proof
 on:
+  schedule:
+    - cron: '17 5,17 * * *'
   workflow_dispatch:
     inputs:
       drill:
-        description: Select source-review to run the source proof and notification drill
+        description: Deliberately fail to verify the CI failure issue
         type: boolean
         default: false
 permissions:
   contents: read
 concurrency:
+  # Unique runs preserve queued manual and scheduled proofs as well as active ones.
   group: full-${{ github.run_id }}
   cancel-in-progress: false
 jobs:
-  bootstrap:
+  check:
     if: github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CARGO_BUILD_JOBS: '2'
+      TOPO_SOURCE_REVISION: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: '1.4.2'
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+  native:
+    if: github.event.repository.private == false
+    uses: ./.github/workflows/native.yml
+  artifacts:
+    if: github.event.repository.private == false
+    needs: [check, native]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CARGO_BUILD_JOBS: '2'
+      TOPO_SOURCE_REVISION: ${{ github.sha }}
+      WRANGLER_SEND_METRICS: 'false'
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: '1.4.2'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: topo-*
+          path: .cache/releases
+          merge-multiple: true
+      - run: bun install --frozen-lockfile
+      - run: cargo install worker-build --version 0.8.7 --locked --root .cache/tools -j 2
+      - name: Build the public site and bundled Worker without publishing
+        run: |
+          cargo run --locked --bin topo-notices -- .cache/notices.html
+          native_version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
+          cargo run --locked --bin topo-site -- --releases .cache/releases --out .cache/site --notices .cache/notices.html --native-version "$native_version" --native-source "$GITHUB_SHA"
+          python3 tools/check_site_links.py .cache/site
+          bunx --no-install wrangler build --config wrangler.toml
+          mv dist .cache/worker
+      - name: Exercise public error refusal and recovery in workerd
+        run: node tests/public-errors.mjs
+      - name: Exercise the built private Worker auth boundary
+        env:
+          CARGO_BUILD_JOBS: '1'
+          CARGO_PROFILE_RELEASE_LTO: 'false'
+          CARGO_PROFILE_RELEASE_CODEGEN_UNITS: '1'
+        run: |
+          (cd private-cloudflare && ../.cache/tools/bin/worker-build --release)
+          node tests/private-worker-auth.mjs
+      - name: Exercise the demo in Chromium against the local built Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          bunx --no-install playwright install --with-deps chromium
+          python3 - <<'PY'
+          import json, pathlib, tomllib
+          config = tomllib.loads(pathlib.Path('wrangler.toml').read_text())
+          config.pop('build')
+          config['main'] = '.cache/worker/index.js'
+          config['no_bundle'] = True
+          config['vars']['SENTRY_ENVIRONMENT'] = 'verification'
+          pathlib.Path('.topo-ci-deploy.json').write_text(json.dumps(config))
+          PY
+          bunx --no-install wrangler dev --local --ip 127.0.0.1 --port 8798 --config .topo-ci-deploy.json > .cache/local-worker.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid"; wait "$worker_pid" || true' EXIT
+          for _attempt in $(seq 1 120); do
+            if curl --fail --silent http://127.0.0.1:8798/manifest.json > /dev/null; then break; fi
+            kill -0 "$worker_pid"
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8798/manifest.json > /dev/null
+          bun tests/demo-browser.mjs http://127.0.0.1:8798 .cache/browser-proof
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: source-proof
+          path: |
+            .cache/site
+            .cache/worker
+            .cache/browser-proof
+            .cache/public-errors-proof.json
+            .cache/private-worker-proof.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+  drill:
+    if: github.event.repository.private == false && github.event_name == 'workflow_dispatch' && inputs.drill
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
-      - name: Require the reviewed source branch
-        run: |
-          echo 'Bootstrap only. Dispatch full.yml against source-review for real proof.'
-          exit 1
+      - name: Deliberate notification drill failure
+        run: exit 1
+  notify:
+    if: failure() && github.event.repository.private == false
+    needs: [check, native, artifacts, drill]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    concurrency:
+      group: ci-failure-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Open or update the CI failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/notify_ci_failure.py

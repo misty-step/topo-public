@@ -1,0 +1,68 @@
+name: Native consumer qualification
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  native:
+    if: github.event.repository.private == false
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - runner: macos-15
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    env:
+      CARGO_BUILD_JOBS: '2'
+      TOPO_SOURCE_REVISION: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.0'
+          targets: ${{ matrix.target }}
+      - name: Rust consumer contracts
+        run: cargo test --locked
+      - name: Build the native release
+        run: cargo build --locked --release --bin topo --target ${{ matrix.target }}
+      - name: Relocate and exercise without build assets or parser toolchains
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.cache/tmp"
+          sandbox=$(mktemp -d "$HOME/.cache/tmp/topo-consumer.XXXXXX")
+          mkdir -p "$sandbox/bin" "$sandbox/repo/src"
+          cp "target/${{ matrix.target }}/release/topo" "$sandbox/bin/topo-${{ matrix.target }}"
+          ln -s "$(command -v git)" "$sandbox/bin/git"
+          ln -s /bin/date "$sandbox/bin/date"
+          printf '{"dependencies":{"zod":"4"}}' > "$sandbox/repo/package.json"
+          printf "import 'zod';\nimport './child';\n" > "$sandbox/repo/src/main.ts"
+          printf 'export const child=1;\n' > "$sandbox/repo/src/child.ts"
+          git -C "$sandbox/repo" init -q
+          git -C "$sandbox/repo" add .
+          git -C "$sandbox/repo" -c user.name=Consumer -c user.email=consumer@example.invalid -c core.hooksPath=/dev/null commit -qm initial --no-gpg-sign
+          cd "$sandbox"
+          mv "$GITHUB_WORKSPACE" "$sandbox/build-checkout"
+          trap 'mv "$sandbox/build-checkout" "$GITHUB_WORKSPACE"' EXIT
+          PATH="$sandbox/bin" "$sandbox/bin/topo-${{ matrix.target }}" --version
+          PATH="$sandbox/bin" "$sandbox/bin/topo-${{ matrix.target }}" run --repo app="$sandbox/repo" --out "$sandbox/map"
+          PATH="$sandbox/bin" "$sandbox/bin/topo-${{ matrix.target }}" query --graph "$sandbox/map/graph.json" --entity file:app:src/main.ts --direction dependencies > query.json
+          python3 -c 'import json; d=json.load(open("query.json")); assert {r["to"] for r in d["relationships"]} == {"file:app:src/child.ts", "package:npm:zod"}'
+          test -s "$sandbox/map/index.html"
+          mkdir -p "$sandbox/build-checkout/.cache/releases"
+          cp "$sandbox/bin/topo-${{ matrix.target }}" "$sandbox/build-checkout/.cache/releases/"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: topo-${{ matrix.target }}
+          path: .cache/releases/topo-${{ matrix.target }}
+          if-no-files-found: error
+          retention-days: 14

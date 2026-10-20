@@ -1,0 +1,14 @@
+.bar{grid-template-columns:auto auto minmax(150px,260px) minmax(0,1fr)}
+.home-link{display:inline-flex;align-items:center;gap:2px;height:22px;padding:0 8px 0 2px;color:var(--color-primary);text-decoration:none;font-weight:600;font-size:var(--text-control)}
+.home-link svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square;transform:scaleX(-1)}
+.home-link:focus-visible{outline:2px solid var(--color-primary);outline-offset:-2px}
+@media (hover:hover) and (pointer:fine){.home-link:hover{background:var(--color-control-hover)}}
+.fresh-bar{display:flex;align-items:center;gap:6px 18px;height:48px;padding:0 14px;background:var(--color-pane);border-top:2px solid var(--color-border-inactive);color:var(--color-muted);font-size:var(--text-home-meta);white-space:nowrap}
+.fresh-bar .fresh{flex-wrap:nowrap;font-size:var(--text-home-meta)}
+.fresh-bar .basis{margin-left:auto}
+.fresh-bar .cov{color:var(--color-muted)}
+body[data-view]>.fresh-bar{position:fixed;bottom:0;left:0;right:0;z-index:100}
+body[data-view]{padding-bottom:48px;box-sizing:border-box}
+@media (max-width:1180px){.bar-meta #bar-state{display:none}}
+@media (max-width:760px){.bar{grid-template-columns:auto minmax(0,1fr) auto}}
+@media (max-width:520px){.fresh-bar{height:72px;flex-wrap:wrap;align-content:center;gap:0 14px;padding:0 12px}.fresh-bar .fresh{flex:1 0 100%}body[data-view]{padding-bottom:72px}}

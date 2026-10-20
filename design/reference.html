@@ -1,0 +1,1907 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Topo · Visual reset</title>
+<style>
+/* Palette: Omarchy "Ivory Blush", the active theme on 2026-10-01 (colors.toml).
+   Window grammar: Hyprland defaults in Omarchy (gaps 5/10, border 2, rounding 0).
+   Control alphas: Omarchy shell.toml (fill .04 / .08 / .18). */
+:root{
+  --desk:#120b17;--pane:#25172c;--inset:#1c1122;--raise:#392342;
+  --sel-bg:#56345f;--sel-fg:#fff7ff;
+  --fg:#f2e8f3;--fg-hi:#fff7ff;--muted:#b9a6bd;--accent:#d59be5;
+  --b-off:rgba(89,89,89,.667);--gap:10px;
+  --ctl:rgba(242,232,243,.04);--ctl-hover:rgba(242,232,243,.08);--ctl-on:rgba(242,232,243,.18);
+  --line:rgba(242,232,243,.1);--line-2:rgba(242,232,243,.25);
+  --c-hosting:#a6afe9;--c-data:#83c79b;--c-auth:#e4c36e;--c-inference:#d59be5;--c-communication:#ef8195;
+  --c-delivery:#7fc4c8;--c-monitoring:#e4a078;--c-dns:#c79573;--c-business:#b9a6bd;--c-other:#b9a6bd;
+  --mono:"JetBrainsMono Nerd Font","JetBrainsMono NF","JetBrains Mono","GeistMono Nerd Font",ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --detail-w:368px;
+}
+.t-hosting{--c:var(--c-hosting)}.t-data{--c:var(--c-data)}.t-auth{--c:var(--c-auth)}.t-inference{--c:var(--c-inference)}
+.t-communication{--c:var(--c-communication)}.t-delivery{--c:var(--c-delivery)}.t-monitoring{--c:var(--c-monitoring)}
+.t-dns{--c:var(--c-dns)}.t-business{--c:var(--c-business)}.t-other{--c:var(--c-other)}
+
+*{box-sizing:border-box}
+/* The app shell never scrolls: html takes the viewport overflow so body can clip (clip, unlike hidden, cannot be scrolled by script).
+   Every long surface scrolls inside its own pane, and each scrolling pane is positioned so absolutely positioned descendants,
+   such as .sr-only labels, stay inside it instead of extending the root's scroll area. */
+html{color-scheme:dark;-webkit-text-size-adjust:100%;overflow:hidden}
+body{margin:0;height:100vh;height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden;overflow:clip;background:var(--desk);color:var(--fg);font:400 13px/1.45 var(--mono);font-variant-ligatures:none}
+button,input,select{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+::selection{background:var(--sel-bg);color:var(--sel-fg)}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.muted{color:var(--muted)}
+.sw{display:inline-block;flex:none;width:16px;height:0;border-top:2px solid var(--c);vertical-align:middle}
+.sw.dash{border-top-style:dashed}
+.sw.dot{border-top-style:dotted}
+* {scrollbar-width:thin;scrollbar-color:rgba(242,232,243,.22) transparent}
+
+/* Bar: mirrors the Omarchy bar, views are numbered like workspaces */
+.bar{flex:none;height:28px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:0 6px;background:var(--pane);font-size:12px}
+.tabs{display:flex;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.tab{display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 9px;border:0;background:none;white-space:nowrap}
+.tab .n{color:var(--muted)}
+.tab:hover{background:var(--ctl-hover)}
+.tab[aria-selected="true"]{background:var(--ctl-hover);color:var(--accent)}
+.tab[aria-selected="true"] .n{color:var(--accent)}
+.bar-title{margin:0;font-size:12px;font-weight:400;white-space:nowrap}
+.bar-meta{justify-self:end;display:flex;align-items:center;gap:12px;min-width:0;color:var(--muted);white-space:nowrap}
+.bar-meta #bar-state{overflow:hidden;text-overflow:ellipsis}
+.barbtn{height:22px;padding:0 8px;border:0;background:none;color:var(--fg)}
+.barbtn:hover,.barbtn[aria-expanded="true"]{background:var(--ctl-hover)}
+.state-draft{color:var(--c-auth)}
+.keys{position:fixed;top:34px;right:10px;z-index:40;min-width:280px;padding:12px 14px;background:var(--pane);border:2px solid var(--accent);font-size:12px}
+.keys dl{display:grid;grid-template-columns:auto 1fr;gap:5px 16px;margin:0}
+.keys dt{color:var(--fg-hi)}
+.keys dd{margin:0;color:var(--muted)}
+
+/* Desk: panes tile like Hyprland windows */
+.desk{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) var(--detail-w);gap:var(--gap);padding:var(--gap)}
+.desk.solo{grid-template-columns:minmax(0,1fr)}
+.pane{min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--pane);background-clip:padding-box;border:2px solid var(--b-off)}
+.pane.is-active{border-color:var(--accent)}
+
+/* Controls */
+.toolbar{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.group{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.spacer{flex:1}
+.input{width:210px;max-width:100%;height:26px;padding:0 8px;border:1px solid var(--line-2);border-radius:0;background:var(--inset);color:var(--fg)}
+.input::placeholder{color:var(--muted);opacity:1}
+.input:focus{outline:none;border-color:var(--accent)}
+.sel{height:26px;padding:0 4px;border:1px solid var(--line-2);border-radius:0;background:var(--inset);color:var(--fg)}
+.sel:focus{outline:none;border-color:var(--accent)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 8px;border:1px solid var(--line);background:none;color:var(--muted);white-space:nowrap;font-size:12px}
+.chip:hover{background:var(--ctl-hover);color:var(--fg)}
+.chip[aria-pressed="true"],.chip[aria-selected="true"]{background:var(--ctl-on);border-color:var(--line-2);color:var(--fg-hi)}
+.chip[disabled]{opacity:.45;cursor:default;background:none}
+.chip .c{color:var(--muted);font-size:11px}
+.chip[aria-pressed="false"] .sw,.chip[aria-pressed="false"] .stg{opacity:.45}
+.hint{color:var(--muted);font-size:11px;min-width:0}
+.btn{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid var(--line-2);background:var(--ctl);color:var(--fg);white-space:nowrap;font-size:12px}
+.btn:hover{background:var(--ctl-hover)}
+.btn[aria-pressed="true"]{background:var(--ctl-on);color:var(--fg-hi)}
+.kg{display:inline-block;flex:none;width:11px;height:9px;border:1px solid var(--line-2)}
+.kg-product{background:var(--raise);border-color:rgba(242,232,243,.45)}
+.kg-provider{border-left:3px solid var(--muted)}
+.kg-tool{border-left:3px double var(--muted)}
+.kg-domain{border:0;border-left:1px solid var(--muted);width:6px}
+/* Status glyphs: filled = live observation in a provider or DNS read, outline = configured only, dash = historical, dotted = unknown */
+.stg{display:inline-block;flex:none;width:8px;height:8px;box-sizing:border-box}
+.s-live .stg,.stg.s-live{background:var(--fg)}
+.s-configured .stg,.stg.s-configured{border:1px solid var(--fg)}
+.s-historical .stg,.stg.s-historical{height:2px;background:var(--muted)}
+.s-unknown .stg,.stg.s-unknown{border:1px dotted var(--fg)}
+.filters{display:contents}
+.filters-btn{display:none}
+
+/* Map */
+.map-viewport{position:relative;flex:1;min-height:0;display:flex;overflow:auto;background:var(--inset);cursor:grab;overscroll-behavior:contain}
+.map-viewport.is-panning{cursor:grabbing;user-select:none}
+.map-world{position:relative;flex:none;margin:auto}
+.map-scale{position:absolute;left:0;top:0;transform-origin:0 0}
+.edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.edges .ln{fill:none;stroke:var(--c);stroke-width:1.25;stroke-opacity:var(--eo,.5);stroke-linecap:round}
+.edges .inf .ln{stroke-dasharray:5 4;stroke-linecap:butt}
+.edges .cfg .ln{stroke-dasharray:1 3.2;stroke-linecap:round}
+.edges .hit{fill:none;stroke:transparent;stroke-width:10;pointer-events:stroke;cursor:default}
+.edges.has-active .ln{stroke-opacity:.07}
+.edges.has-active .is-hot .ln{stroke-opacity:.95;stroke-width:2}
+.edges .edge:hover .ln{stroke-opacity:1;stroke-width:2.25}
+.layer{position:absolute;left:0;top:0;width:0;height:0}
+.band{position:absolute;display:flex;align-items:center;gap:7px;height:16px;font-size:11px;color:var(--muted);white-space:nowrap}
+.band .sw{width:12px}
+.band b{font-weight:400;color:var(--fg)}
+.colcap{position:absolute;font-size:11px;color:var(--muted);white-space:nowrap}
+.node{position:absolute;display:flex;flex-direction:column;justify-content:center;gap:1px;margin:0;padding:0 9px 0 12px;border:1px solid var(--line-2);border-radius:0;background:var(--pane);color:var(--fg);font-size:12px;line-height:1.25;text-align:left;white-space:normal;overflow:hidden;opacity:var(--o,1)}
+.node::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c)}
+.node:hover{background:#2f1e37}
+.node.k-tool::before{width:5px;background:none;border-left:1px solid var(--c);border-right:1px solid var(--c)}
+.node.k-product{background:var(--raise);border-color:rgba(242,232,243,.34);color:var(--fg-hi);font-size:13px;font-weight:600;padding-left:11px}
+.node.k-product::before{display:none}
+.node.k-product:hover{background:#43294d}
+.node.k-domain{background:transparent;border-color:transparent;color:var(--muted);padding-left:9px}
+.node.k-domain::before{width:1px}
+.node.k-domain:hover{background:var(--ctl-hover);color:var(--fg)}
+.node.s-historical{--o:.6}
+.node.s-unknown{border-style:dotted}
+.node.k-domain.s-unknown{border-color:var(--line-2)}
+.node.is-near{--o:1}
+.node.is-dim{opacity:.24}
+.node.is-match{box-shadow:0 0 0 1px var(--accent);--o:1}
+.node.is-sel{--o:1;opacity:1;background:var(--sel-bg);border:2px solid var(--sel-fg);color:var(--sel-fg)}
+.node:focus-visible{outline:2px solid var(--accent);outline-offset:2px;--o:1}
+.nl{display:flex;align-items:baseline;gap:8px;min-width:0}
+.lab{min-width:0;overflow-wrap:anywhere}
+.node .stg{margin-left:auto;margin-top:4px;align-self:flex-start}
+.node.k-product .stg{margin-top:5px}
+.node.is-sel .stg{border-color:var(--sel-fg)}
+.node.is-sel.s-live .stg{background:var(--sel-fg)}
+.sub{display:flex;align-items:flex-start;gap:6px;min-width:0;font-size:11px;font-weight:400;color:var(--muted)}
+.sub>span{min-width:0;overflow-wrap:anywhere}
+.sub .sw{width:10px;margin-top:7px}
+.node.is-sel .sub{color:var(--sel-fg)}
+.map-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;padding:24px 28px;cursor:default}
+.map-empty p{margin:0;max-width:60ch}
+.legend{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;padding:7px 10px;border-top:1px solid var(--line)}
+.legend .sep{width:1px;height:18px;margin:0 4px;background:var(--line)}
+
+/* Detail */
+.detail-head{flex:none;display:flex;align-items:flex-start;gap:10px;padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+.detail-head .grow{flex:1;min-width:0}
+.d-title{margin:0;font-size:16px;font-weight:600;line-height:1.3;color:var(--fg-hi);overflow-wrap:anywhere}
+.d-title:focus{outline:none}
+.d-sub{margin-top:3px;color:var(--muted);font-size:12px}
+.detail-body{position:relative;flex:1;min-height:0;overflow:auto;padding:12px 16px 24px}
+.d-sum{margin:0 0 4px;max-width:72ch}
+.facts{display:grid;grid-template-columns:76px minmax(0,1fr);gap:7px 12px;margin:12px 0 0;font-size:12px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.d-sec{margin-top:20px}
+.d-sec>h3,.h3{margin:0 0 6px;font-size:12px;font-weight:600;color:var(--muted)}
+.list{margin:0;padding:0;list-style:none;font-size:12px}
+.list li{position:relative;padding:3px 0 3px 16px}
+.list li::before{content:"";position:absolute;left:2px;top:11px;width:6px;height:1px;background:var(--muted)}
+.list.plus li::before{content:"+";top:3px;left:1px;width:auto;height:auto;background:none;color:var(--muted)}
+.list.minus li::before{content:"\2212";top:3px;left:1px;width:auto;height:auto;background:none;color:var(--muted)}
+.rel{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:baseline;gap:1px 9px;padding:6px 0;border-top:1px solid var(--line);font-size:12px}
+.rel:first-of-type{border-top:0}
+.rel .sw{align-self:center}
+.rel .ev{color:var(--muted);font-size:11px;white-space:nowrap}
+.rel .lbl{grid-column:2 / -1;color:var(--muted)}
+.relgroup+.relgroup{margin-top:8px}
+.relgroup>.h3{display:flex;align-items:center;gap:8px;font-weight:400}
+.srcs{display:flex;flex-direction:column;gap:4px}
+.srcrow{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;align-items:baseline}
+.lvl{color:var(--muted);font-size:11px}
+.link{padding:0;border:0;background:none;color:var(--fg);text-align:left;text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px}
+.link:hover{text-decoration-color:var(--fg)}
+.ref{padding:0;border:0;background:none;color:inherit;text-decoration:underline dotted;text-decoration-color:var(--muted);text-underline-offset:3px}
+.ref:hover{color:var(--fg-hi);text-decoration-style:solid}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:20px}
+.stat{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin:12px 0 0;font-size:12px}
+.stat div{display:flex;justify-content:space-between;gap:8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.stat b{font-weight:600;color:var(--fg-hi)}
+.recbox{margin-top:8px;padding:2px 0 2px 12px;border-left:2px solid var(--accent)}
+.recbox .nm{font-weight:600;color:var(--fg-hi)}
+.unk{color:var(--muted)}
+
+/* Tables */
+.tabs2{display:flex;gap:4px}
+.table-wrap{position:relative;flex:1;min-height:0;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{position:sticky;top:0;z-index:1;padding:0;background:var(--inset);border-bottom:1px solid var(--line-2);color:var(--muted);font-weight:600;text-align:left;white-space:nowrap}
+th .sort,th .thl{display:flex;align-items:center;gap:6px;width:100%;min-height:30px;padding:0 10px;border:0;background:none;color:inherit;font-weight:600;text-align:left}
+th.rowh{position:static;z-index:auto;padding:7px 10px;background:none;border-bottom:1px solid var(--line);color:var(--fg-hi);white-space:normal;vertical-align:top}
+th .sort:hover{color:var(--fg)}
+th[aria-sort] .sort{color:var(--fg-hi)}
+th .ar{font-weight:400}
+td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--ctl)}
+tr.row.is-sel td{background:var(--sel-bg);color:var(--sel-fg)}
+tr.row.is-near td{background:var(--ctl-hover)}
+.cell-name{font-weight:600;color:var(--fg-hi)}
+.cell-sub{color:var(--muted);font-size:11px}
+.idbtn{padding:0;border:0;background:none;color:var(--muted);font-size:11px;text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:2px}
+.idbtn:hover{color:var(--fg)}
+.ids{display:flex;flex-wrap:wrap;gap:2px 8px}
+.empty-row td{padding:24px 10px;color:var(--muted)}
+.count{margin-left:auto;color:var(--muted);font-size:11px}
+.inv-table{min-width:980px}
+.inv-table.edges-t{min-width:860px}
+
+/* Documents: Directions and Evidence */
+.doc{position:relative;flex:1;min-height:0;overflow:auto}
+.subnav{position:sticky;top:0;z-index:3;display:flex;flex-wrap:wrap;gap:4px;padding:8px 20px;background:var(--pane);border-bottom:1px solid var(--line)}
+.doc-inner{padding:6px 20px 48px}
+.sec{padding-top:22px}
+.sec>h2{margin:0 0 4px;font-size:14px;font-weight:600;color:var(--fg-hi)}
+.sec>.cap{margin:0 0 12px;max-width:80ch;color:var(--muted);font-size:12px}
+.rec{max-width:88ch;padding:4px 0 4px 16px;border-left:2px solid var(--accent)}
+.rec .nm{margin:0;font-size:20px;font-weight:600;line-height:1.3;color:var(--fg-hi)}
+.rec .meta{margin-top:4px;color:var(--muted);font-size:12px}
+.rec p{margin:8px 0 0}
+.ranked{max-width:88ch;margin:0;padding:0;list-style:none}
+.ranked li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:2px 12px;padding:12px 0 12px 14px;border-top:1px solid var(--line);border-left:2px solid transparent}
+.ranked li:first-child{border-top:0;border-left-color:var(--accent)}
+.ranked .rk{grid-row:span 3;font-size:20px;font-weight:600;line-height:1.2;color:var(--muted)}
+.ranked li:first-child .rk{color:var(--accent)}
+.ranked .nm{font-size:14px;font-weight:600;color:var(--fg-hi)}
+.ranked .stance{color:var(--muted);font-size:12px}
+.ranked p{margin:4px 0 0}
+.compare{display:grid;grid-template-columns:repeat(var(--n),minmax(250px,1fr));grid-template-rows:repeat(9,auto);gap:0 10px;overflow-x:auto;padding-bottom:4px}
+.dcol{display:grid;grid-row:span 9;grid-template-rows:subgrid;border:1px solid var(--line-2);background:var(--inset)}
+.dcol.is-rec{border:2px solid var(--accent)}
+.dcell{min-width:0;padding:9px 12px;border-top:1px solid var(--line);font-size:12px}
+.dcell:first-child{border-top:0}
+.dcell>h4{margin:0 0 4px;font-size:11px;font-weight:600;color:var(--muted)}
+.dcell p{margin:0}
+.dhead{display:flex;flex-direction:column;gap:2px}
+.dhead .rk{color:var(--muted);font-size:11px}
+.dhead .nm{font-size:14px;font-weight:600;color:var(--fg-hi);line-height:1.3}
+.dhead .stance{font-size:11px;color:var(--muted)}
+.dcol.is-rec .rk{color:var(--accent)}
+.spread td,.spread th{white-space:normal}
+.spread td{min-width:120px}
+.spread tfoot td{color:var(--muted);border-top:1px solid var(--line-2);border-bottom:0}
+.prov{display:inline}
+.prov+.prov::before{content:", ";color:var(--muted)}
+.prov .ref{text-decoration-style:solid}
+.prov.cfg .ref{text-decoration-style:dotted}
+.prov.inf .ref{text-decoration-style:dashed}
+.wide{overflow-x:auto}
+.wide table{min-width:820px}
+.finding{max-width:88ch;padding:10px 0;border-top:1px solid var(--line)}
+.finding:first-of-type{border-top:0}
+.finding h3{margin:0 0 3px;font-size:13px;font-weight:600;color:var(--fg-hi)}
+.finding p{margin:0 0 6px}
+tr.is-flash td{background:var(--ctl-on)}
+tr.is-flash td:first-child{box-shadow:inset 2px 0 0 var(--accent)}
+.lvl-pill{display:inline-block;min-width:52px;color:var(--fg)}
+.notice{max-width:72ch;padding:10px 0 10px 14px;border-left:2px solid var(--c-auth)}
+.notice h2{margin:0 0 4px;font-size:14px;color:var(--fg-hi)}
+.notice p{margin:0 0 6px}
+a{color:var(--fg);text-decoration-color:var(--line-2);text-underline-offset:3px}
+a:hover{text-decoration-color:var(--fg)}
+
+@media (max-width:1100px){
+  :root{--detail-w:320px}
+  .input{width:170px}
+}
+@media (max-width:760px){
+  :root{--gap:6px}
+  .bar{grid-template-columns:minmax(0,1fr) auto}
+  .bar-title,#bar-state,.tab .n{display:none}
+  .tab{padding:0 7px}
+  .desk,.desk.solo{grid-template-columns:minmax(0,1fr)}
+  .detail{position:fixed;left:0;right:0;bottom:0;z-index:30;max-height:72dvh;border-width:2px 0 0;border-color:var(--accent);transform:translateY(calc(100% + 6px));visibility:hidden;transition:transform .18s ease-out,visibility 0s linear .18s}
+  .detail.is-open{transform:none;visibility:visible;transition:transform .18s ease-out,visibility 0s}
+  .toolbar{padding:6px 8px}
+  .filters-btn{display:inline-flex}
+  .filters{display:none}
+  .toolbar.is-open .filters{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;flex-basis:100%}
+  .input{flex:1 1 150px;width:auto}
+  .legend{max-height:76px;overflow:auto}
+  .inv-table,.inv-table.edges-t{min-width:0}
+  .inv-table thead tr{display:flex;overflow-x:auto}
+  .inv-table thead th{flex:none;position:static}
+  .inv-table thead{position:sticky;top:0;z-index:2;display:block;background:var(--inset)}
+  .inv-table tbody,.inv-table tr.row{display:block}
+  .inv-table tr.row{padding:8px 0;border-bottom:1px solid var(--line)}
+  .inv-table td{display:grid;grid-template-columns:84px minmax(0,1fr);gap:8px;padding:2px 10px;border:0}
+  .inv-table td::before{content:attr(data-label);color:var(--muted)}
+  .inv-table td.num{text-align:left}
+  .compare{display:block}
+  .dcol{display:block;margin-bottom:10px}
+  .doc-inner{padding:4px 12px 40px}
+  .subnav{padding:6px 12px}
+  .rec .nm{font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;scroll-behavior:auto!important}
+}
+
+/* Topo reset keeps the original tiled grammar. Only compact touch targets and sample identification are added. */
+.sampleflag{color:var(--c-auth);font-size:11px}.review-link{text-decoration:none;font-size:11px}
+.chip[aria-pressed="true"] .c,.chip[aria-selected="true"] .c{color:#cbb9d0}
+#node-table td:nth-child(2),#node-table td:nth-child(3),#node-table td:nth-child(4){white-space:nowrap}
+@media(max-width:760px){.bar{height:36px;gap:4px}.bar-meta{gap:4px}.bar-title,.review-link{display:none}.tab{height:28px;padding:0 5px}.tab .n{display:none}.barbtn{height:28px;padding:0 5px}.input,.sel,.chip,.btn{min-height:34px;height:auto}.input,.sel{height:34px}.node{touch-action:manipulation}}
+@media(prefers-reduced-motion:reduce){.detail{transition:none!important}}
+
+</style>
+</head>
+<body data-view="map">
+<header class="bar">
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button class="tab" type="button" role="tab" id="tab-map" data-view="map" aria-controls="view-map" aria-selected="true"><span class="n">1</span>Map</button>
+    <button class="tab" type="button" role="tab" id="tab-inventory" data-view="inventory" aria-controls="view-inventory" aria-selected="false" tabindex="-1"><span class="n">2</span>Inventory</button>
+    <button class="tab" type="button" role="tab" id="tab-directions" data-view="directions" aria-controls="view-directions" aria-selected="false" tabindex="-1"><span class="n">3</span>Directions</button>
+    <button class="tab" type="button" role="tab" id="tab-evidence" data-view="evidence" aria-controls="view-evidence" aria-selected="false" tabindex="-1"><span class="n">4</span>Evidence</button>
+  </div>
+  <h1 class="bar-title">Topo / demo workspace</h1>
+  <div class="bar-meta"><span class="sampleflag" title="Fictional data; no connected tools">Demo</span><span id="bar-state"></span><a class="review-link" href="../">Review</a><button class="barbtn" type="button" id="keys-btn" aria-expanded="false" aria-controls="keys">Keys</button></div>
+</header>
+<div class="keys" id="keys" role="region" aria-label="Keyboard shortcuts" hidden>
+  <dl>
+    <dt>1 2 3 4</dt><dd>Map, Inventory, Directions, Evidence</dd>
+    <dt>/</dt><dd>Search the current view</dd>
+    <dt>Arrows</dt><dd>Move between map nodes</dd>
+    <dt>Enter</dt><dd>Inspect the node</dd>
+    <dt>F</dt><dd>Focus on its neighborhood</dd>
+    <dt>Esc</dt><dd>Leave focus, then clear selection</dd>
+    <dt>+ &minus; 0</dt><dd>Zoom in, zoom out, fit</dd>
+  </dl>
+</div>
+<main class="desk" id="desk">
+  <section class="pane view is-active" id="view-map" role="tabpanel" aria-labelledby="tab-map">
+    <div class="toolbar" role="group" aria-label="Map filters">
+      <label><span class="sr-only">Search nodes</span><input class="input" id="map-q" type="search" placeholder="Search  /" autocomplete="off" spellcheck="false"></label>
+      <button class="chip filters-btn" type="button" id="filters-btn" aria-expanded="false" aria-controls="map-filters">Filters</button>
+      <div class="filters" id="map-filters">
+        <div class="group" id="kind-chips" role="group" aria-label="Node kinds"></div>
+        <div class="group" id="status-chips" role="group" aria-label="Status"></div>
+        <label><span class="sr-only">Category</span><select class="sel" id="cat-sel"></select></label>
+      </div>
+      <span class="hint" id="map-q-count"></span>
+      <span class="spacer"></span>
+      <button class="chip" type="button" id="focus-btn" aria-pressed="false" disabled>Focus</button>
+      <div class="group" role="group" aria-label="Zoom">
+        <button class="chip" type="button" id="zoom-out" aria-label="Zoom out">&minus;</button>
+        <button class="chip" type="button" id="zoom-fit">Fit</button>
+        <button class="chip" type="button" id="zoom-in" aria-label="Zoom in">+</button>
+      </div>
+      <button class="chip" type="button" id="reset-btn">Reset</button>
+    </div>
+    <div class="map-viewport" id="map-vp">
+      <div class="map-world" id="map-world">
+        <div class="map-scale" id="map-scale">
+          <svg class="edges" id="map-edges" aria-hidden="true" focusable="false"></svg>
+          <div class="layer" id="map-bands" aria-hidden="true"></div>
+          <div class="layer" id="map-nodes" role="group" aria-label="Infrastructure map" aria-describedby="map-help"></div>
+        </div>
+      </div>
+      <div class="map-empty" id="map-empty" hidden></div>
+    </div>
+    <p class="sr-only" id="map-help">Arrow keys move between nodes. Enter shows details. F focuses the neighborhood. Escape clears.</p>
+    <div class="legend" id="legend" role="group" aria-label="Relationship legend and filters"></div>
+  </section>
+  <section class="pane view" id="view-inventory" role="tabpanel" aria-labelledby="tab-inventory" hidden>
+    <div class="toolbar" role="group" aria-label="Inventory controls">
+      <div class="tabs2" role="tablist" aria-label="Inventory tables">
+        <button class="chip" type="button" role="tab" id="inv-tab-nodes" data-inv="nodes" aria-selected="true" aria-controls="inv-table-wrap"></button>
+        <button class="chip" type="button" role="tab" id="inv-tab-edges" data-inv="edges" aria-selected="false" aria-controls="inv-table-wrap" tabindex="-1"></button>
+      </div>
+      <label><span class="sr-only">Search inventory</span><input class="input" id="inv-q" type="search" placeholder="Search  /" autocomplete="off" spellcheck="false"></label>
+      <span id="inv-filters" class="group"></span>
+      <span class="count" id="inv-count" aria-live="polite"></span>
+    </div>
+    <div class="table-wrap" id="inv-table-wrap" role="tabpanel" aria-label="Inventory table" tabindex="-1"></div>
+  </section>
+  <section class="pane view" id="view-directions" role="tabpanel" aria-labelledby="tab-directions" hidden>
+    <div class="doc" id="dir-doc"></div>
+  </section>
+  <section class="pane view" id="view-evidence" role="tabpanel" aria-labelledby="tab-evidence" hidden>
+    <div class="doc" id="ev-doc"></div>
+  </section>
+  <aside class="pane detail" id="detail" aria-label="Details">
+    <div class="detail-head" id="detail-head"></div>
+    <div class="detail-body" id="detail-body"></div>
+  </aside>
+</main>
+<div class="sr-only" id="live" aria-live="polite" aria-atomic="true"></div>
+<script type="application/json" id="infra-data">{
+"meta":{"date":"2026-10-08","coverage":"Fictional workspace for the visual reset. No provider observations, agent runs or infrastructure changes. Select a service to read its relationships and source context.","limits":["All names, statuses and relationships are authored examples, not live infrastructure.","Unknown is not healthy, absent, free or retired.","This prototype reuses rendering and interaction grammar, not client infrastructure data."]},
+"nodes":[{"id":"beacon","label":"Beacon API","kind":"product","category":"compute","status":"configured","summary":"Public API in this fictional workspace. Depends on runtime, identity and Ledger. Production acceptance is not represented by a sketch.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"ledger","label":"Ledger billing","kind":"product","category":"data","status":"configured","summary":"Billing service in the fictional workspace. Database restore evidence remains unknown.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"dispatch","label":"Dispatch jobs","kind":"product","category":"compute","status":"configured","summary":"Scheduled background work. A legacy Linux dependency remains explicit.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"compass","label":"Compass portal","kind":"product","category":"compute","status":"configured","summary":"Customer portal. Shares identity and billing dependencies with Beacon.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"relay","label":"Relay ingest","kind":"product","category":"compute","status":"configured","summary":"Receives events and sends bounded work to a queue.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"quarry","label":"Quarry search","kind":"product","category":"data","status":"configured","summary":"Search application with an index and retained source documents.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"lantern","label":"Lantern docs","kind":"product","category":"compute","status":"configured","summary":"Documentation surface with source and release provenance.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"topo","label":"Topo workspace","kind":"product","category":"compute","status":"configured","summary":"Fictional knowledge-maintenance plane. The UI and agents share one revisioned evidence model. This sketch does not implement a backend.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"dns","label":"Cloudflare DNS","kind":"provider","category":"domain","status":"configured","summary":"Example DNS authority. No account or live zone was collected.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"registrar","label":"Domain registrar","kind":"provider","category":"domain","status":"unknown","summary":"Custody and recovery access have not been established in this fictional scenario.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"api-domain","label":"api.beacon.example","kind":"domain","category":"domain","status":"configured","summary":"Reserved example domain. No DNS observation is claimed.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"portal-domain","label":"portal.beacon.example","kind":"domain","category":"domain","status":"configured","summary":"Reserved example domain for the fictional portal.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"docs-domain","label":"docs.beacon.example","kind":"domain","category":"domain","status":"configured","summary":"Reserved example domain for the fictional documentation surface.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"forge","label":"Source forge","kind":"provider","category":"delivery","status":"configured","summary":"Example source authority. No repository or credential is embedded.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"ci","label":"Build pipeline","kind":"tool","category":"delivery","status":"configured","summary":"Example build automation. A successful build is not production acceptance.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"artifacts","label":"Release artifacts","kind":"provider","category":"delivery","status":"configured","summary":"Example artifact custody and immutable release inputs.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"collector","label":"Scoped collector","kind":"tool","category":"delivery","status":"configured","summary":"Deterministic collector for explicit provider facts. Credentials stay in its approved execution context.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"investigator","label":"Investigation agent","kind":"tool","category":"delivery","status":"configured","summary":"Investigates gaps with bounded read capabilities. Submits evidence-backed proposals; cannot grant itself commit or mutation authority.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"mail","label":"Mail delivery","kind":"provider","category":"communication","status":"configured","summary":"Example transactional mail vendor. Account recovery is not shown.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"notices","label":"Incident notices","kind":"provider","category":"communication","status":"configured","summary":"Example notification transport. No messages are sent by this sketch.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"support","label":"Support workspace","kind":"provider","category":"communication","status":"unknown","summary":"Owner attribution is unresolved in the fictional workspace.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"payments","label":"Payment vendor","kind":"provider","category":"business","status":"configured","summary":"Example payments dependency, not a measured bill or a working account.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"crm","label":"Customer records","kind":"provider","category":"business","status":"configured","summary":"Example business record authority, separate from application runtime.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"calendar","label":"Scheduling vendor","kind":"provider","category":"business","status":"configured","summary":"Example outside vendor dependency.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"workers","label":"Cloudflare Workers","kind":"provider","category":"compute","status":"configured","summary":"Example edge runtime. Presence does not prove a successful user journey.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"linux","label":"Legacy Linux host","kind":"provider","category":"compute","status":"configured","summary":"Persistent execution exception. Dispatch still depends on this host; the sketch authorizes no retirement.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"queues","label":"Cloudflare Queues","kind":"provider","category":"compute","status":"configured","summary":"Example bounded-work delivery, not the authority for application data.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"d1","label":"D1 evidence ledger","kind":"provider","category":"data","status":"configured","summary":"Proposed example authority for Topo records and revisions.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"postgres","label":"PostgreSQL","kind":"provider","category":"data","status":"configured","summary":"Example authoritative application database. Isolated restore remains unverified.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"r2","label":"R2 evidence store","kind":"provider","category":"data","status":"configured","summary":"Example attachment and archive custody. No secret or raw session content is included.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"kv","label":"KV cache","kind":"provider","category":"data","status":"configured","summary":"Example disposable cache, not a second fact authority.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"vector","label":"Search index","kind":"provider","category":"data","status":"configured","summary":"Example derived index with retained source documents.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"backup","label":"Off-host backup","kind":"provider","category":"data","status":"unknown","summary":"A configured backup is not a completed isolated restore.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"oidc","label":"OIDC identity","kind":"provider","category":"identity","status":"configured","summary":"Example user identity boundary. Tools enforce actual capabilities.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"access","label":"Cloudflare Access","kind":"provider","category":"identity","status":"configured","summary":"Example private entry point, not a deployed Topo access policy.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"signing","label":"Signing authority","kind":"tool","category":"identity","status":"configured","summary":"Example scoped signing custody. No key material is present.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"errors","label":"Error reporting","kind":"provider","category":"observability","status":"configured","summary":"Example observability vendor. No traffic or health is being simulated.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"otel","label":"Telemetry collector","kind":"tool","category":"observability","status":"configured","summary":"Example telemetry delivery. It does not certify a service is healthy.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"analytics","label":"Product analytics","kind":"provider","category":"observability","status":"configured","summary":"Example business telemetry, with no collected user information.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"openrouter","label":"OpenRouter Decisions","kind":"provider","category":"ai","status":"configured","summary":"Transport for typed decisions, not a separate intelligence layer.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"jev","label":"Jev / typed judgments","kind":"provider","category":"ai","status":"configured","summary":"Narrow semantic judgments. Never a source of execution authority or unseen infrastructure facts.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"clef","label":"Clef / candidate","kind":"provider","category":"ai","status":"unknown","summary":"Alternative Cloudflare decision model. No production selection is implied.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]},
+{"id":"generation","label":"Generative model","kind":"provider","category":"ai","status":"configured","summary":"Supports investigation and source-linked explanation, not deterministic workflow mechanics.","owner":"Example team","cost":"Unknown; fictional workspace","repos":[],"strengths":[],"weaknesses":[],"details":["Fictional fixture, not observed infrastructure."],"sources":["fixture"]}],"edges":[{"from":"beacon","to":"workers","type":"hosting","label":"Execution runtime","evidence":"read","sources":["fixture"]},
+{"from":"beacon","to":"postgres","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"beacon","to":"oidc","type":"auth","label":"Authentication","evidence":"read","sources":["fixture"]},
+{"from":"beacon","to":"mail","type":"communication","label":"Messages / notifications","evidence":"read","sources":["fixture"]},
+{"from":"beacon","to":"errors","type":"monitoring","label":"Observability","evidence":"read","sources":["fixture"]},
+{"from":"beacon","to":"forge","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"ledger","to":"workers","type":"hosting","label":"Execution runtime","evidence":"read","sources":["fixture"]},
+{"from":"ledger","to":"postgres","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"ledger","to":"payments","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"ledger","to":"mail","type":"communication","label":"Messages / notifications","evidence":"read","sources":["fixture"]},
+{"from":"ledger","to":"signing","type":"auth","label":"Authentication","evidence":"read","sources":["fixture"]},
+{"from":"ledger","to":"ci","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"ledger","to":"errors","type":"monitoring","label":"Observability","evidence":"read","sources":["fixture"]},
+{"from":"dispatch","to":"linux","type":"hosting","label":"Execution runtime","evidence":"read","sources":["fixture"]},
+{"from":"dispatch","to":"queues","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"dispatch","to":"postgres","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"dispatch","to":"mail","type":"communication","label":"Messages / notifications","evidence":"read","sources":["fixture"]},
+{"from":"dispatch","to":"otel","type":"monitoring","label":"Observability","evidence":"read","sources":["fixture"]},
+{"from":"dispatch","to":"artifacts","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"compass","to":"workers","type":"hosting","label":"Execution runtime","evidence":"read","sources":["fixture"]},
+{"from":"compass","to":"oidc","type":"auth","label":"Authentication","evidence":"read","sources":["fixture"]},
+{"from":"compass","to":"ledger","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"compass","to":"crm","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"compass","to":"analytics","type":"monitoring","label":"Observability","evidence":"read","sources":["fixture"]},
+{"from":"compass","to":"calendar","type":"communication","label":"Messages / notifications","evidence":"read","sources":["fixture"]},
+{"from":"compass","to":"forge","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"relay","to":"workers","type":"hosting","label":"Execution runtime","evidence":"read","sources":["fixture"]},
+{"from":"relay","to":"queues","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"relay","to":"r2","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"relay","to":"signing","type":"auth","label":"Authentication","evidence":"read","sources":["fixture"]},
+{"from":"relay","to":"otel","type":"monitoring","label":"Observability","evidence":"read","sources":["fixture"]},
+{"from":"relay","to":"ci","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"quarry","to":"workers","type":"hosting","label":"Execution runtime","evidence":"read","sources":["fixture"]},
+{"from":"quarry","to":"vector","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"quarry","to":"r2","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"quarry","to":"kv","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"quarry","to":"oidc","type":"auth","label":"Authentication","evidence":"read","sources":["fixture"]},
+{"from":"quarry","to":"generation","type":"inference","label":"Model / transport","evidence":"read","sources":["fixture"]},
+{"from":"quarry","to":"forge","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"lantern","to":"workers","type":"hosting","label":"Execution runtime","evidence":"read","sources":["fixture"]},
+{"from":"lantern","to":"r2","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"lantern","to":"forge","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"lantern","to":"ci","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"lantern","to":"artifacts","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"lantern","to":"analytics","type":"monitoring","label":"Observability","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"workers","type":"hosting","label":"Execution runtime","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"d1","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"r2","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"queues","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"access","type":"auth","label":"Authentication","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"collector","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"investigator","type":"delivery","label":"Delivery / maintenance","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"openrouter","type":"inference","label":"Model / transport","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"jev","type":"inference","label":"Model / transport","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"clef","type":"inference","label":"Unresolved candidate","evidence":"inference","sources":["fixture"]},
+{"from":"topo","to":"notices","type":"communication","label":"Messages / notifications","evidence":"read","sources":["fixture"]},
+{"from":"topo","to":"errors","type":"monitoring","label":"Observability","evidence":"read","sources":["fixture"]},
+{"from":"postgres","to":"backup","type":"data","label":"Unresolved candidate","evidence":"inference","sources":["fixture"]},
+{"from":"backup","to":"r2","type":"data","label":"Data dependency","evidence":"read","sources":["fixture"]},
+{"from":"investigator","to":"generation","type":"inference","label":"Model / transport","evidence":"read","sources":["fixture"]},
+{"from":"jev","to":"openrouter","type":"inference","label":"Model / transport","evidence":"read","sources":["fixture"]},
+{"from":"api-domain","to":"beacon","type":"dns","label":"Authority / route","evidence":"read","sources":["fixture"]},
+{"from":"portal-domain","to":"compass","type":"dns","label":"Authority / route","evidence":"read","sources":["fixture"]},
+{"from":"docs-domain","to":"lantern","type":"dns","label":"Authority / route","evidence":"read","sources":["fixture"]},
+{"from":"api-domain","to":"dns","type":"dns","label":"Authority / route","evidence":"read","sources":["fixture"]},
+{"from":"portal-domain","to":"dns","type":"dns","label":"Authority / route","evidence":"read","sources":["fixture"]},
+{"from":"docs-domain","to":"dns","type":"dns","label":"Authority / route","evidence":"read","sources":["fixture"]},
+{"from":"dns","to":"registrar","type":"dns","label":"Authority / route","evidence":"read","sources":["fixture"]},
+{"from":"beacon","to":"support","type":"communication","label":"Unresolved candidate","evidence":"inference","sources":["fixture"]}],
+"sources":[{"id":"fixture","label":"Fictional topology fixture","level":"config","date":"2026-10-08","url":null,"result":"Hand-authored examples for visual and interaction review. No provider was contacted to generate this dataset."}],
+"directions":[
+{"id":"code-led","rank":1,"name":"Code-led maintenance","stance":"Architecture proposal, not selected","decision":"Code owns scope, identities, explicit observations, graph projection and revisions. Agents investigate ambiguity. Jev or Clef supplies typed judgments, not authority.","moves":["Keep the map as the primary workspace.","Use one model and API for humans and agents.","Investigations focus the map rather than replace it."],"cost":"Unmeasured. Connector upkeep dominates the deterministic path.","risk":["Incomplete coverage can hide behind polished rendering."],"givesUp":[],"ergonomics":["Structured queries and evidence-backed proposals."],"prerequisites":["Real provider refresh and a proven restore path."],"sources":["fixture"]},
+{"id":"agent-led","rank":2,"name":"Agent-led discovery","stance":"Alternative, not selected","decision":"Scoped scouts gather observations and propose updates. Code controls admission, budgets, retries, revisions and permissions.","moves":["Inspect maintenance as a dock alongside the graph."],"cost":"Unmeasured. More inference and variability.","risk":["Activity becomes noise or unsourced assertions."],"givesUp":[],"ergonomics":["Bounded investigations and typed proposals."],"prerequisites":["Narrow capabilities and source receipts."],"sources":["fixture"]},
+{"id":"question-led","rank":3,"name":"Question-led research","stance":"Alternative, not selected","decision":"Start from a consequential question. Reuse the current graph, investigate its gaps, and return a source-linked finding without inventing certainty.","moves":["Show investigation state inside the same workspace."],"cost":"Unmeasured. Spend follows investigations.","risk":["Coverage goes stale between investigations."],"givesUp":[],"ergonomics":["A bounded objective, scope and allowed reads."],"prerequisites":["A maintained evidence model."],"sources":["fixture"]}
+],"alternatives":[],
+"findings":[{"title":"The visual reference is the original tiled map","detail":"Keep the compact workspace bar, full-height map, semantic wires and evidence inspector. The prior oversized headings and rounded provider regions were rejected.","evidence":["fixture"]},{"title":"No retirement conclusion is implied","detail":"Dispatch retains its legacy Linux dependency. Missing restore evidence remains an open question.","evidence":["fixture"]}],
+"gaps":[{"area":"Recovery","detail":"Backup configuration is not a successful isolated restore.","needed":"A source-backed restore and verification on the target."},{"area":"Ownership","detail":"The support vendor owner is unresolved.","needed":"An authoritative owner assertion."}]
+}</script>
+<script>
+(() => {
+'use strict';
+
+/* ---------- vocabulary ---------- */
+const VIEWS = ['map', 'inventory', 'directions', 'evidence'];
+const TYPES = ['hosting', 'data', 'auth', 'inference', 'communication', 'monitoring', 'delivery', 'dns'];
+const KINDS = ['product', 'provider', 'tool', 'domain'];
+const KIND_PL = { product: 'Products', provider: 'Providers', tool: 'Tools', domain: 'Domains' };
+const KIND_ONE = { product: 'Product', provider: 'Provider', tool: 'Tool', domain: 'Domain' };
+const STATUSES = ['live', 'configured', 'historical', 'unknown'];
+const STATUS_ONE = { live: 'Live', configured: 'Configured', historical: 'Historical', unknown: 'Unknown' };
+const CATS = ['compute', 'data', 'identity', 'communication', 'delivery', 'observability', 'ai', 'business', 'domain'];
+const CAT_ONE = { compute: 'compute', data: 'data', identity: 'identity', communication: 'communication', delivery: 'delivery', observability: 'observability', ai: 'AI', business: 'business', domain: 'domain' };
+const CAT_TITLE = { compute: 'Compute', data: 'Data', identity: 'Identity', communication: 'Communication', delivery: 'Delivery', observability: 'Observability', ai: 'AI', business: 'Business', domain: 'Domain' };
+const LEVEL_RANK = { api: 0, cli: 1, dns: 2, config: 3, pricing: 4, other: 5 };
+/* Evidence tiers by how a link was read: live = positive provider proof from a successful API, CLI or DNS read (metadata, not traffic or health);
+   config = documentary: repository source or config, docs, pricing, or a record of a failed or unattributed probe; inference = reasoned. */
+const TIERS = ['live', 'config', 'inference'];
+const TIER_ONE = { live: 'provider read', config: 'documentary', inference: 'inferred' };
+const TIER_TITLE = { live: 'Positive provider proof: a successful API, CLI or DNS read of account or repository metadata; not traffic or health', config: 'Documentary: repository source or config, docs, pricing, or a record of a failed or unattributed probe; not positive provider proof', inference: 'Inferred: reasoned from indirect evidence, not stated in a source' };
+/* Bands: left = reach and operations, right = runtime and what watches it. Each band borrows the hue of the relationship that lands in it. */
+const BANDS = {
+  domains: { label: 'Domains', side: 'L', tone: 'dns' },
+  domain: { label: 'Domain services', side: 'L', tone: 'dns' },
+  delivery: { label: 'Delivery', side: 'L', tone: 'delivery' },
+  communication: { label: 'Communication', side: 'L', tone: 'communication' },
+  business: { label: 'Business', side: 'L', tone: 'business' },
+  compute: { label: 'Compute', side: 'R', tone: 'hosting' },
+  data: { label: 'Data', side: 'R', tone: 'data' },
+  identity: { label: 'Identity', side: 'R', tone: 'auth' },
+  observability: { label: 'Observability', side: 'R', tone: 'monitoring' },
+  ai: { label: 'AI', side: 'R', tone: 'inference' },
+};
+const BAND_ORDER = Object.keys(BANDS);
+const GEO = { top: 40, bandHead: 20, nodeGap: 5, bandGap: 14, prodGap: 10, colGap: 150, pad: 18, bottom: 22 };
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const arr = (x) => (Array.isArray(x) ? x : []);
+const str = (x) => (typeof x === 'string' ? x : x == null ? '' : String(x));
+const strs = (x) => arr(x).map((v) => str(v).trim()).filter(Boolean);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const isUnknown = (s) => !s || /^unknown\b/i.test(String(s).trim());
+const byLabel = (a, b) => a.label.localeCompare(b.label, 'en', { sensitivity: 'base' });
+const textW = (s, px) => s.length * px * 0.6;
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + 's'}`;
+
+function h(tag, a, ...kids) {
+  const el = document.createElement(tag);
+  if (a) for (const k of Object.keys(a)) {
+    const v = a[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k === 'vars') for (const [p, val] of Object.entries(v)) el.style.setProperty(p, val);
+    else if (k === 'css') el.style.cssText = v;
+    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : String(v));
+  }
+  for (const c of kids.flat(Infinity)) if (c != null && c !== false) el.append(c.nodeType ? c : String(c));
+  return el;
+}
+function sv(tag, a) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  if (a) for (const k of Object.keys(a)) if (a[k] != null) el.setAttribute(k, String(a[k]));
+  return el;
+}
+function safeUrl(s) {
+  try { const u = new URL(str(s)); return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : ''; } catch (e) { return ''; }
+}
+const sw = (tone, tier) => h('i', { class: `sw t-${tone}${tier === 'config' ? ' dot' : tier === 'inference' ? ' dash' : ''}`, 'aria-hidden': 'true' });
+/* Scroll one pane so an element shows below the pane's sticky header (inset). Unlike scrollIntoView,
+   this never scrolls ancestors or the window, so the bar and toolbars stay in place. */
+function scrollWithin(box, el, mode, inset) {
+  const r = el.getBoundingClientRect();
+  const top = r.top - box.getBoundingClientRect().top - box.clientTop - inset;
+  const view = box.clientHeight - inset;
+  if (mode === 'start') box.scrollTop += top;
+  else if (mode === 'center') box.scrollTop += top - (view - r.height) / 2;
+  else if (top < 0) box.scrollTop += top;
+  else if (top + r.height > view) box.scrollTop += Math.min(top, top + r.height - view);
+}
+
+/* ---------- data ---------- */
+function load() {
+  const el = document.getElementById('infra-data');
+  const text = el ? el.textContent.trim() : '';
+  let raw = {};
+  let error = null;
+  if (text && !text.startsWith('/*')) {
+    try { raw = JSON.parse(text) || {}; } catch (e) { error = String((e && e.message) || e); }
+  }
+  const warn = [];
+  const meta = raw.meta && typeof raw.meta === 'object' ? raw.meta : {};
+  const M = { date: str(meta.date), coverage: str(meta.coverage), limits: strs(meta.limits) };
+
+  const nodes = [];
+  const byId = new Map();
+  arr(raw.nodes).forEach((r) => {
+    if (!r || typeof r !== 'object') return;
+    const id = str(r.id).trim();
+    if (!id || byId.has(id)) { warn.push(`node id "${id}" is empty or duplicated`); return; }
+    if (!KINDS.includes(r.kind)) warn.push(`node ${id} has kind "${str(r.kind)}"`);
+    const kind = KINDS.includes(r.kind) ? r.kind : 'provider';
+    if (!CATS.includes(r.category)) warn.push(`node ${id} has category "${str(r.category)}"`);
+    const category = CATS.includes(r.category) ? r.category : kind === 'domain' ? 'domain' : 'business';
+    if (!STATUSES.includes(r.status)) warn.push(`node ${id} has status "${str(r.status)}"`);
+    const n = {
+      id, kind, category,
+      label: str(r.label).trim() || id,
+      status: STATUSES.includes(r.status) ? r.status : 'unknown',
+      summary: str(r.summary).trim(),
+      repos: strs(r.repos),
+      owner: str(r.owner).trim() || 'Unknown',
+      cost: str(r.cost).trim() || 'Unknown',
+      strengths: strs(r.strengths),
+      weaknesses: strs(r.weaknesses),
+      sources: strs(r.sources),
+      details: strs(r.details),
+      idx: nodes.length,
+      links: [],
+    };
+    nodes.push(n);
+    byId.set(id, n);
+  });
+
+  const edges = [];
+  arr(raw.edges).forEach((r, i) => {
+    if (!r || typeof r !== 'object') return;
+    const from = str(r.from).trim();
+    const to = str(r.to).trim();
+    if (!byId.has(from) || !byId.has(to)) { warn.push(`relationship ${from} to ${to} names a missing node`); return; }
+    if (!TYPES.includes(r.type)) warn.push(`relationship ${from} to ${to} has type "${str(r.type)}"`);
+    if (r.evidence !== 'read' && r.evidence !== 'inference') warn.push(`relationship ${from} to ${to} has evidence "${str(r.evidence)}"`);
+    edges.push({
+      id: 'e' + i, from, to,
+      type: TYPES.includes(r.type) ? r.type : 'other',
+      label: str(r.label).trim(),
+      evidence: r.evidence === 'read' ? 'read' : 'inference',
+      sources: strs(r.sources),
+    });
+  });
+
+  const sources = [];
+  const srcById = new Map();
+  arr(raw.sources).forEach((r) => {
+    if (!r || typeof r !== 'object') return;
+    const id = str(r.id).trim();
+    if (!id || srcById.has(id)) { warn.push(`source id "${id}" is empty or duplicated`); return; }
+    const level = str(r.level).trim();
+    const s = { id, label: str(r.label).trim() || id, result: str(r.result).trim(), date: str(r.date).trim(), url: safeUrl(r.url), level: level in LEVEL_RANK ? level : 'other', idx: sources.length };
+    sources.push(s);
+    srcById.set(id, s);
+  });
+
+  const directions = arr(raw.directions).filter((r) => r && typeof r === 'object').map((r, i) => ({
+    id: str(r.id).trim() || 'direction-' + (i + 1),
+    rank: Number.isFinite(Number(r.rank)) ? Number(r.rank) : i + 1,
+    name: str(r.name).trim(), stance: str(r.stance).trim(), decision: str(r.decision).trim(),
+    moves: strs(r.moves), cost: str(r.cost).trim(), risk: strs(r.risk), givesUp: strs(r.givesUp),
+    ergonomics: strs(r.ergonomics), prerequisites: strs(r.prerequisites), sources: strs(r.sources),
+  })).sort((a, b) => a.rank - b.rank);
+  const alternatives = arr(raw.alternatives).filter((r) => r && typeof r === 'object').map((r) => ({
+    name: str(r.name).trim(), why: str(r.why).trim(), tradeoff: str(r.tradeoff).trim(), use: str(r.use).trim(), source: safeUrl(r.source), sourceText: str(r.source).trim(), sources: strs(r.sources),
+  }));
+  const findings = arr(raw.findings).filter((r) => r && typeof r === 'object').map((r) => ({ title: str(r.title).trim(), detail: str(r.detail).trim(), evidence: strs(r.evidence) }));
+  const gaps = arr(raw.gaps).filter((r) => r && typeof r === 'object').map((r) => ({ area: str(r.area).trim(), detail: str(r.detail).trim(), needed: str(r.needed).trim() }));
+
+  for (const e of edges) {
+    e.tier = e.evidence === 'inference' ? 'inference' : e.sources.some((id) => ['api', 'cli', 'dns'].includes((srcById.get(id) || {}).level)) ? 'live' : 'config';
+  }
+  for (const e of edges) {
+    const a = byId.get(e.from);
+    const b = byId.get(e.to);
+    a.links.push({ e, other: b, dir: 'out' });
+    if (a !== b) b.links.push({ e, other: a, dir: 'in' });
+  }
+  for (const n of nodes) {
+    const ps = new Set();
+    const qs = new Set();
+    for (const l of n.links) (l.other.kind === 'product' ? ps : qs).add(l.other.id);
+    n.productCount = ps.size;
+    n.otherCount = qs.size;
+    n.indirect = n.kind === 'tool' && n.productCount === 0;
+    n.levels = [...new Set(n.sources.map((id) => (srcById.get(id) || {}).level).filter(Boolean))].sort((a, b) => LEVEL_RANK[a] - LEVEL_RANK[b]);
+  }
+
+  const cited = new Map(sources.map((s) => [s.id, { nodes: [], edges: [], findings: [], directions: [], alternatives: [] }]));
+  const cite = (id, bucket, obj, where) => {
+    const c = cited.get(id);
+    if (!c) { warn.push(`${where} cites missing source "${id}"`); return; }
+    c[bucket].push(obj);
+  };
+  nodes.forEach((n) => n.sources.forEach((id) => cite(id, 'nodes', n, `node ${n.id}`)));
+  edges.forEach((e) => e.sources.forEach((id) => cite(id, 'edges', e, `relationship ${e.from} to ${e.to}`)));
+  findings.forEach((f) => f.evidence.forEach((id) => cite(id, 'findings', f, `finding "${f.title}"`)));
+  directions.forEach((d) => d.sources.forEach((id) => cite(id, 'directions', d, `direction ${d.id}`)));
+  alternatives.forEach((a) => a.sources.forEach((id) => cite(id, 'alternatives', a, `alternative "${a.name}"`)));
+
+  return { meta: M, nodes, byId, edges, sources, srcById, directions, alternatives, findings, gaps, cited, warn, error, empty: nodes.length === 0 };
+}
+
+const D = load();
+const TYPES_IN = [...TYPES, 'other'].filter((t) => D.edges.some((e) => e.type === t));
+const KINDS_IN = KINDS.filter((k) => D.nodes.some((n) => n.kind === k));
+const STATUSES_IN = STATUSES.filter((s) => D.nodes.some((n) => n.status === s));
+const count = (list, f) => list.reduce((a, x) => a + (f(x) ? 1 : 0), 0);
+function edgeLevel(e) {
+  let best = null;
+  for (const id of e.sources) { const s = D.srcById.get(id); if (s && (best == null || LEVEL_RANK[s.level] < LEVEL_RANK[best])) best = s.level; }
+  return best;
+}
+/* One phrase per link for map tooltips, detail rows and the inventory, so the three always agree. */
+function evidenceText(e) {
+  const lvl = edgeLevel(e) || 'uncited';
+  return e.tier === 'inference' ? 'inferred' : e.tier === 'live' ? `read via ${lvl}` : `documentary (${lvl})`;
+}
+function bandKey(n) {
+  if (n.kind === 'product') return null;
+  if (n.kind === 'domain') return 'domains';
+  return BANDS[n.category] ? n.category : 'business';
+}
+D.nodes.forEach((n) => {
+  n.hay = [n.label, n.id, n.kind, n.category, n.status, n.summary, n.owner, n.cost, n.repos.join(' '), n.strengths.join(' '), n.weaknesses.join(' '), n.details.join(' '), n.sources.join(' ')].join(' ').toLowerCase();
+  n.mhay = [n.label, n.id, KIND_ONE[n.kind], CAT_ONE[n.category], n.owner, n.repos.join(' ')].join(' ').toLowerCase();
+});
+
+/* Node names inside prose become links to the map. */
+const LABEL_TO_ID = new Map();
+D.nodes.forEach((n) => { if (n.label.length >= 3 && !LABEL_TO_ID.has(n.label)) LABEL_TO_ID.set(n.label, n.id); });
+const LABEL_RE = LABEL_TO_ID.size
+  ? new RegExp('(?<![\\w.@/-])(' + [...LABEL_TO_ID.keys()].sort((a, b) => b.length - a.length).map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?![\\w-]|\\.\\w)', 'g')
+  : null;
+function rich(text) {
+  if (!text) return [];
+  if (!LABEL_RE) return [text];
+  const out = [];
+  let last = 0;
+  for (const m of text.matchAll(LABEL_RE)) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    out.push(h('button', { type: 'button', class: 'ref', 'data-goto': LABEL_TO_ID.get(m[1]), title: 'Show on map', text: m[1] }));
+    last = m.index + m[1].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
+/* ---------- state ---------- */
+const S = {
+  view: 'map',
+  selected: null,
+  hover: null,
+  focus: false,
+  kinds: new Set(KINDS_IN),
+  statuses: new Set(STATUSES_IN),
+  cat: 'all',
+  types: new Set(TYPES_IN),
+  evidence: new Set(TIERS),
+  query: '',
+  scale: null,
+  inv: { tab: 'nodes', q: '', kind: 'all', status: 'all', cat: 'all', type: 'all', evidence: 'all', sort: { nodes: ['label', 1], edges: ['from', 1] } },
+  srcQ: '',
+  srcLevel: 'all',
+  flash: null,
+};
+const DEFAULT_KINDS = new Set(KINDS_IN);
+/* A crowded default map shrinks labels below reading size. Long-tail nodes start hidden, stay one chip away, and are always in Inventory:
+   domains when there are many, and tools that link only to other providers rather than to a product. */
+if (count(D.nodes, (n) => n.kind === 'domain') > 14) DEFAULT_KINDS.delete('domain');
+const INDIRECT = count(D.nodes, (n) => n.indirect);
+const DEFAULT_LONGTAIL = !(INDIRECT > 0 && count(D.nodes, (n) => DEFAULT_KINDS.has(n.kind)) > 50);
+S.kinds = new Set(DEFAULT_KINDS);
+S.longTail = DEFAULT_LONGTAIL;
+
+/* ---------- elements ---------- */
+const E = {
+  desk: $('#desk'), barState: $('#bar-state'), keys: $('#keys'), keysBtn: $('#keys-btn'),
+  vp: $('#map-vp'), world: $('#map-world'), scale: $('#map-scale'), svg: $('#map-edges'), bands: $('#map-bands'), nodes: $('#map-nodes'), mapEmpty: $('#map-empty'),
+  q: $('#map-q'), qCount: $('#map-q-count'), kindChips: $('#kind-chips'), statusChips: $('#status-chips'), catSel: $('#cat-sel'), focusBtn: $('#focus-btn'), legend: $('#legend'),
+  detail: $('#detail'), dHead: $('#detail-head'), dBody: $('#detail-body'),
+  invQ: $('#inv-q'), invWrap: $('#inv-table-wrap'), invCount: $('#inv-count'), invFilters: $('#inv-filters'),
+  dirDoc: $('#dir-doc'), evDoc: $('#ev-doc'), live: $('#live'),
+};
+let LAY = null;
+let VIS = { nodes: [], edges: [] };
+let mapKey = '';
+let curScale = 1;
+let cursorId = null;
+let lastDetail = '';
+let dirBuilt = false;
+let evBuilt = false;
+
+function announce(msg) {
+  E.live.textContent = '';
+  window.setTimeout(() => { E.live.textContent = msg; }, 40);
+}
+
+/* ---------- map layout ---------- */
+const nodeBaseH = (n) => (n.kind === 'product' ? 32 : n.kind === 'domain' ? 22 : 26);
+
+function pav(v) {
+  const blocks = [];
+  for (const x of v) {
+    blocks.push({ sum: x, n: 1 });
+    while (blocks.length > 1) {
+      const b = blocks[blocks.length - 1];
+      const a = blocks[blocks.length - 2];
+      if (a.sum / a.n <= b.sum / b.n) break;
+      a.sum += b.sum; a.n += b.n; blocks.pop();
+    }
+  }
+  const out = [];
+  for (const b of blocks) for (let k = 0; k < b.n; k++) out.push(b.sum / b.n);
+  return out;
+}
+
+function wrapLines(text, capacity) {
+  const cap = Math.max(1, Math.floor(capacity));
+  let lines = 1;
+  let cur = 0;
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    if (cur && cur + 1 + word.length <= cap) { cur += 1 + word.length; continue; }
+    if (!cur && word.length <= cap) { cur = word.length; continue; }
+    if (cur) { lines += 1; cur = 0; }
+    lines += Math.ceil(word.length / cap) - 1;
+    cur = word.length % cap || cap;
+  }
+  return lines;
+}
+
+function layoutGraph(nodes, edges, focusId) {
+  const I = new Map();
+  const nb = new Map(nodes.map((n) => [n.id, []]));
+  for (const e of edges) { nb.get(e.from).push(e.to); nb.get(e.to).push(e.from); }
+  const subs = new Map();
+  if (focusId) for (const e of edges) {
+    const other = e.from === focusId ? e.to : e.to === focusId ? e.from : null;
+    if (!other || other === focusId) continue;
+    if (!subs.has(other)) subs.set(other, []);
+    subs.get(other).push(e);
+  }
+  const bands = new Map();
+  const P = [];
+  for (const n of nodes) {
+    const band = bandKey(n);
+    const col = band ? BANDS[band].side : 'C';
+    const lines = (subs.get(n.id) || []).slice().sort((a, b) => TYPES.indexOf(a.type) - TYPES.indexOf(b.type));
+    const sub = lines.slice(0, 5);
+    const fs = n.kind === 'product' ? 13 : 12;
+    let need = textW(n.label, fs) + 16 + 24;
+    for (const e of sub) need = Math.max(need, textW(e.label || e.type, 11) + 40);
+    const it = { n, id: n.id, col, band, fs, need, sub, more: lines.length - sub.length, x: 0, y: 0, w: 0, h: 0, labelH: 0, order: n.idx };
+    I.set(n.id, it);
+    if (col === 'C') P.push(it);
+    else { if (!bands.has(band)) bands.set(band, []); bands.get(band).push(it); }
+  }
+  const colW = { L: 0, C: 0, R: 0 };
+  for (const it of I.values()) colW[it.col] = Math.max(colW[it.col], clamp(it.need, it.col === 'C' ? 150 : 136, focusId ? 270 : it.col === 'C' ? 264 : 248));
+  /* Long labels wrap rather than truncate; a monospace face makes the line count predictable. */
+  for (const it of I.values()) {
+    it.w = colW[it.col];
+    const pad = (it.n.kind === 'product' ? 11 : it.n.kind === 'domain' ? 9 : 12) + 9 + 4;
+    it.labelH = nodeBaseH(it.n) + (wrapLines(it.n.label, (it.w - pad - 16) / (it.fs * 0.6)) - 1) * it.fs * 1.25;
+    const subCap = (it.w - pad - 16) / (11 * 0.6);
+    const subH = it.sub.length ? 6 + it.sub.reduce((a, e) => a + wrapLines(e.label || e.type, subCap) * 14 + 1, 0) + (it.more > 0 ? 15 : 0) : 0;
+    it.h = Math.ceil(it.labelH + subH);
+  }
+
+  const side = { L: [], R: [] };
+  for (const key of BAND_ORDER) if (bands.has(key)) side[BANDS[key].side].push({ key, items: bands.get(key).sort((a, b) => byLabel(a.n, b.n)), y: 0 });
+  const cy = (it) => it.y + it.h / 2;
+  const stack = (s) => {
+    let y = GEO.top;
+    for (const b of side[s]) {
+      b.y = y;
+      y += GEO.bandHead;
+      for (const it of b.items) { it.y = y; y += it.h + GEO.nodeGap; }
+      y += GEO.bandGap - GEO.nodeGap;
+    }
+    return y;
+  };
+  const placeProducts = () => {
+    const ideal = new Map();
+    for (const p of P) {
+      const ys = nb.get(p.id).map((id) => I.get(id)).filter((o) => o && o.col !== 'C').map(cy);
+      ideal.set(p.id, ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : NaN);
+    }
+    P.sort((a, b) => {
+      const ia = ideal.get(a.id);
+      const ib = ideal.get(b.id);
+      if (Number.isNaN(ia) || Number.isNaN(ib)) return Number.isNaN(ia) - Number.isNaN(ib) || a.order - b.order;
+      return ia - ib || a.order - b.order;
+    });
+    const c = [];
+    let acc = 0;
+    for (const p of P) { c.push(acc); acc += p.h + GEO.prodGap; }
+    const target = P.map((p, i) => ideal.get(p.id) - p.h / 2 - c[i]);
+    for (let i = 0; i < target.length; i++) if (Number.isNaN(target[i])) target[i] = i ? target[i - 1] : GEO.top;
+    const z = pav(target);
+    let minY = Infinity;
+    P.forEach((p, i) => { p.y = z[i] + c[i]; minY = Math.min(minY, p.y); });
+    if (minY < GEO.top) P.forEach((p) => { p.y += GEO.top - minY; });
+  };
+  const reorder = () => {
+    for (const s of ['L', 'R']) for (const b of side[s]) {
+      const key = new Map();
+      b.items.forEach((it, i) => {
+        const ns = nb.get(it.id).map((id) => I.get(id)).filter(Boolean);
+        const pref = ns.filter((o) => o.col === 'C');
+        const use = pref.length ? pref : ns.filter((o) => o.band !== it.band);
+        key.set(it.id, use.length ? use.reduce((a, o) => a + cy(o), 0) / use.length : 1e9 + i);
+      });
+      b.items.sort((a, c) => key.get(a.id) - key.get(c.id) || byLabel(a.n, c.n));
+    }
+  };
+  for (let k = 0; k < 6; k++) { stack('L'); stack('R'); placeProducts(); reorder(); }
+  const hL = stack('L');
+  const hR = stack('R');
+  placeProducts();
+  const hC = P.reduce((m, p) => Math.max(m, p.y + p.h + GEO.prodGap), GEO.top);
+  const H = Math.max(hL, hR, hC) + GEO.bottom;
+
+  const segs = [];
+  for (const e of edges) {
+    const a = I.get(e.from);
+    const b = I.get(e.to);
+    if (!a || !b || a === b) continue;
+    let kind;
+    if (a.col === b.col) kind = a.col === 'C' ? 'arcC' : 'arc';
+    else if (a.col === 'C' || b.col === 'C') kind = 'span';
+    else kind = 'cross';
+    const portSide = (me, other) => {
+      if (kind === 'arc') return me.col === 'L' ? 'l' : 'r';
+      if (kind === 'arcC') return 'r';
+      if (me.col === 'C') return other.col === 'L' ? 'l' : 'r';
+      return me.col === 'L' ? 'r' : 'l';
+    };
+    segs.push({ e, a, b, kind, sa: portSide(a, b), sb: portSide(b, a), ya: 0, yb: 0 });
+  }
+  const ports = new Map();
+  const addPort = (it, s, seg, end, oy) => {
+    const k = it.id + '|' + s;
+    if (!ports.has(k)) ports.set(k, []);
+    ports.get(k).push({ seg, end, oy, it });
+  };
+  for (const s of segs) { addPort(s.a, s.sa, s, 'a', cy(s.b)); addPort(s.b, s.sb, s, 'b', cy(s.a)); }
+  for (const list of ports.values()) {
+    list.sort((p, q) => p.oy - q.oy);
+    const it = list[0].it;
+    const n = list.length;
+    const usable = Math.max(0, Math.min(it.h, 34) - 10);
+    const step = n > 1 ? Math.min(6, usable / (n - 1)) : 0;
+    const mid = it.y + (it.sub.length ? 3 + it.labelH / 2 : it.h / 2);
+    list.forEach((p, i) => { p.seg[p.end === 'a' ? 'ya' : 'yb'] = mid + (i - (n - 1) / 2) * step; });
+  }
+  let bulgeL = 0;
+  let bulgeR = 0;
+  for (const s of segs) {
+    if (s.kind !== 'arc' && s.kind !== 'arcC') continue;
+    s.bulge = s.kind === 'arcC' ? Math.min(GEO.colGap * 0.42, 14 + 0.25 * Math.abs(s.ya - s.yb)) : Math.min(110, 14 + 0.28 * Math.abs(s.ya - s.yb));
+    if (s.kind === 'arc') { if (s.a.col === 'L') bulgeL = Math.max(bulgeL, s.bulge); else bulgeR = Math.max(bulgeR, s.bulge); }
+  }
+  const cols = ['L', 'C', 'R'].filter((c) => (c === 'C' ? P.length : side[c].length));
+  const colX = {};
+  let x = GEO.pad + bulgeL;
+  cols.forEach((c, i) => { colX[c] = x; x += colW[c] + (i < cols.length - 1 ? GEO.colGap : 0); });
+  const W = x + GEO.pad + bulgeR;
+  for (const it of I.values()) it.x = colX[it.col];
+
+  const free = [];
+  if (P.length) {
+    const boxes = P.map((p) => [p.y - 5, p.y + p.h + 5]).sort((a, b) => a[0] - b[0]);
+    let prev = GEO.top - 22;
+    for (const [t, bt] of boxes) { if (t - prev > 6) free.push({ lo: prev, hi: t, used: 0 }); prev = Math.max(prev, bt); }
+    free.push({ lo: prev, hi: prev + 400, used: 0 });
+  }
+  for (const s of segs) {
+    const x1 = s.sa === 'l' ? s.a.x : s.a.x + s.a.w;
+    const x2 = s.sb === 'l' ? s.b.x : s.b.x + s.b.w;
+    const y1 = s.ya;
+    const y2 = s.yb;
+    if (s.kind === 'arc' || s.kind === 'arcC') {
+      const b = s.bulge * (s.sa === 'l' ? -1 : 1);
+      s.d = `M${x1},${y1} C${x1 + b},${y1} ${x2 + b},${y2} ${x2},${y2}`;
+    } else if (s.kind === 'cross' && free.length) {
+      const L = s.a.col === 'L' ? { x: x1, y: y1 } : { x: x2, y: y2 };
+      const R = s.a.col === 'L' ? { x: x2, y: y2 } : { x: x1, y: y1 };
+      const want = (L.y + R.y) / 2;
+      let best = free[0];
+      let bestD = Infinity;
+      for (const f of free) {
+        const d = want < f.lo ? f.lo - want : want > f.hi ? want - f.hi : 0;
+        if (d < bestD) { bestD = d; best = f; }
+      }
+      const k = best.used++;
+      const yc = clamp(want, best.lo + 3, Math.max(best.lo + 3, best.hi - 3)) + (k % 2 ? -1 : 1) * Math.ceil(k / 2) * 4;
+      const cxL = colX.C - 26;
+      const cxR = colX.C + colW.C + 26;
+      const mL = (L.x + cxL) / 2;
+      const mR = (cxR + R.x) / 2;
+      s.d = `M${L.x},${L.y} C${mL},${L.y} ${mL},${yc} ${cxL},${yc} L${cxR},${yc} C${mR},${yc} ${mR},${R.y} ${R.x},${R.y}`;
+    } else {
+      const dx = Math.max(30, Math.abs(x2 - x1) * 0.5) * (x2 >= x1 ? 1 : -1);
+      s.d = `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+    }
+  }
+  const bandBoxes = [];
+  for (const s of ['L', 'R']) for (const b of side[s]) bandBoxes.push({ key: b.key, x: colX[s], y: b.y, w: colW[s], n: b.items.length });
+  const caps = [];
+  if (colX.L != null) caps.push({ text: 'Reach and operations', x: colX.L });
+  if (colX.C != null) caps.push({ text: 'Products', x: colX.C });
+  if (colX.R != null) caps.push({ text: 'Runtime', x: colX.R });
+  return { W: Math.ceil(W), H: Math.ceil(H), items: [...I.values()], byId: I, segs, bands: bandBoxes, caps, colX, colW, cols };
+}
+
+/* ---------- map ---------- */
+/* One predicate for both the visible set and the map cache key, so they cannot drift apart. */
+function nodePasses(n) {
+  return S.kinds.has(n.kind) && (S.longTail || !n.indirect) && S.statuses.has(n.status) && (S.cat === 'all' || n.kind === 'product' || n.category === S.cat);
+}
+function visibleGraph() {
+  const sel = S.selected;
+  let ns = D.nodes.filter((n) => n.id === sel || nodePasses(n));
+  let ids = new Set(ns.map((n) => n.id));
+  let es = D.edges.filter((e) => ids.has(e.from) && ids.has(e.to) && S.types.has(e.type) && S.evidence.has(e.tier));
+  if (S.cat !== 'all') {
+    /* A category view keeps only the products that touch that category. */
+    const touched = new Set();
+    for (const e of es) {
+      const a = D.byId.get(e.from);
+      const b = D.byId.get(e.to);
+      if (a.kind === 'product' && b.kind !== 'product') touched.add(a.id);
+      if (b.kind === 'product' && a.kind !== 'product') touched.add(b.id);
+    }
+    ns = ns.filter((n) => n.kind !== 'product' || n.id === sel || touched.has(n.id));
+    ids = new Set(ns.map((n) => n.id));
+    es = es.filter((e) => ids.has(e.from) && ids.has(e.to));
+  }
+  if (S.focus && sel && ids.has(sel)) {
+    es = es.filter((e) => e.from === sel || e.to === sel);
+    const keep = new Set([sel]);
+    es.forEach((e) => { keep.add(e.from); keep.add(e.to); });
+    ns = ns.filter((n) => keep.has(n.id));
+  }
+  return { nodes: ns, edges: es };
+}
+function currentMapKey() {
+  const n = S.selected ? D.byId.get(S.selected) : null;
+  const forced = n && !nodePasses(n) ? n.id : '';
+  return [[...S.kinds].sort(), S.longTail, [...S.statuses].sort(), S.cat, [...S.types].sort(), [...S.evidence].sort(), S.focus ? S.selected : '', S.cat !== 'all' ? S.selected : '', forced].join('|');
+}
+function nodeAria(n) {
+  const rel = n.links.length;
+  return `${n.label}. ${KIND_ONE[n.kind]}, ${CAT_ONE[n.category]}, ${STATUS_ONE[n.status].toLowerCase()}. ${plural(rel, 'relationship')}.`;
+}
+
+function renderMap() {
+  const focused = document.activeElement && document.activeElement.closest ? document.activeElement.closest('#map-nodes .node') : null;
+  const refocus = focused ? focused.dataset.node : null;
+  S.hover = null;
+  mapKey = currentMapKey();
+  VIS = visibleGraph();
+  const none = VIS.nodes.length === 0;
+  E.world.hidden = none;
+  E.mapEmpty.hidden = !none;
+  if (none) {
+    LAY = null;
+    E.mapEmpty.replaceChildren(D.empty ? unfinished() : h('p', { text: 'No nodes match these filters.' }), D.empty ? null : h('button', { class: 'btn', type: 'button', 'data-act': 'reset', text: 'Reset filters' }));
+    updateMapControls();
+    return;
+  }
+  LAY = layoutGraph(VIS.nodes, VIS.edges, S.focus && S.selected ? S.selected : null);
+  const eo = clamp(0.62 - VIS.edges.length / 320, 0.3, 0.6);
+  E.svg.style.setProperty('--eo', String(eo));
+  E.svg.setAttribute('width', LAY.W);
+  E.svg.setAttribute('height', LAY.H);
+  E.svg.setAttribute('viewBox', `0 0 ${LAY.W} ${LAY.H}`);
+  const segs = LAY.segs.slice().sort((a, b) => TIERS.indexOf(b.e.tier) - TIERS.indexOf(a.e.tier));
+  E.svg.replaceChildren(...segs.map((s) => {
+    const e = s.e;
+    const g = sv('g', { class: `edge t-${e.type}${e.tier === 'config' ? ' cfg' : e.tier === 'inference' ? ' inf' : ''}`, 'data-edge': e.id, 'data-from': e.from, 'data-to': e.to });
+    const t = sv('title');
+    t.textContent = `${D.byId.get(e.from).label} to ${D.byId.get(e.to).label}: ${e.type}, ${evidenceText(e)}${e.label ? '. ' + e.label : ''}`;
+    g.append(t, sv('path', { class: 'hit', d: s.d }), sv('path', { class: 'ln', d: s.d }));
+    return g;
+  }));
+  E.bands.replaceChildren(
+    ...LAY.caps.map((c) => h('div', { class: 'colcap', css: `left:${c.x}px;top:12px`, text: c.text })),
+    ...LAY.bands.map((b) => h('div', { class: `band t-${BANDS[b.key].tone}`, css: `left:${b.x}px;top:${b.y}px` }, sw(BANDS[b.key].tone), h('b', { text: BANDS[b.key].label }), String(b.n))),
+  );
+  if (!LAY.byId.has(cursorId)) cursorId = (LAY.byId.get(S.selected) || LAY.items.filter((i) => i.col === 'C').sort((a, b) => a.y - b.y)[0] || LAY.items[0]).id;
+  E.nodes.replaceChildren(...LAY.items.slice().sort((a, b) => ['L', 'C', 'R'].indexOf(a.col) - ['L', 'C', 'R'].indexOf(b.col) || a.y - b.y).map((it) => {
+    const n = it.n;
+    const b = h('button', {
+      type: 'button', class: `node k-${n.kind} s-${n.status} t-${it.band ? BANDS[it.band].tone : 'business'}`, 'data-node': n.id,
+      'aria-pressed': String(S.selected === n.id), 'aria-label': nodeAria(n), tabindex: n.id === cursorId ? '0' : '-1',
+      title: `${n.label} (${n.status})`,
+      css: `left:${it.x}px;top:${it.y}px;width:${it.w}px;height:${it.h}px`,
+    }, h('span', { class: 'nl' }, h('span', { class: 'lab', text: n.label }), h('i', { class: 'stg', 'aria-hidden': 'true' })));
+    for (const e of it.sub) b.append(h('span', { class: 'sub' }, sw(e.type, e.tier), h('span', { text: e.label || e.type })));
+    if (it.more > 0) b.append(h('span', { class: 'sub' }, h('span', { text: `+${it.more} more` })));
+    return b;
+  }));
+  applyScale();
+  if (refocus) {
+    const target = LAY.byId.has(refocus) ? refocus : S.selected && LAY.byId.has(S.selected) ? S.selected : null;
+    if (target) moveCursor(target);
+  }
+  paint();
+  updateMapControls();
+}
+
+function autoScale() {
+  const vw = E.vp.clientWidth - 16;
+  const vh = E.vp.clientHeight - 16;
+  if (!LAY || vw <= 0 || vh <= 0) return 1;
+  const fit = Math.min(vw / LAY.W, vh / LAY.H);
+  return clamp(fit, vw < 700 ? 0.8 : 1, 1.15);
+}
+function applyScale() {
+  if (!LAY) return;
+  curScale = S.scale == null ? autoScale() : S.scale;
+  E.world.style.width = LAY.W * curScale + 'px';
+  E.world.style.height = LAY.H * curScale + 'px';
+  E.scale.style.width = LAY.W + 'px';
+  E.scale.style.height = LAY.H + 'px';
+  E.scale.style.transform = `scale(${curScale})`;
+}
+function zoomTo(s, ax, ay) {
+  if (!LAY) return;
+  s = clamp(s, 0.3, 1.8);
+  const vx = ax == null ? E.vp.clientWidth / 2 : ax;
+  const vy = ay == null ? E.vp.clientHeight / 2 : ay;
+  const wx = (E.vp.scrollLeft + vx - E.world.offsetLeft) / curScale;
+  const wy = (E.vp.scrollTop + vy - E.world.offsetTop) / curScale;
+  S.scale = s;
+  applyScale();
+  E.vp.scrollLeft = wx * curScale + E.world.offsetLeft - vx;
+  E.vp.scrollTop = wy * curScale + E.world.offsetTop - vy;
+}
+function fitMap() {
+  if (!LAY) return;
+  const vw = E.vp.clientWidth - 16;
+  const vh = E.vp.clientHeight - 16;
+  S.scale = vw > 0 && vh > 0 ? clamp(Math.min(vw / LAY.W, vh / LAY.H), 0.3, 1.6) : 1;
+  applyScale();
+}
+
+function paint() {
+  if (!LAY) return;
+  const active = S.hover && LAY.byId.has(S.hover) ? S.hover : S.selected && LAY.byId.has(S.selected) ? S.selected : null;
+  const near = new Set();
+  const hot = new Set();
+  if (active) {
+    near.add(active);
+    for (const e of VIS.edges) if (e.from === active || e.to === active) { hot.add(e.id); near.add(e.from); near.add(e.to); }
+  }
+  const q = S.query.trim().toLowerCase();
+  const match = q ? new Set(VIS.nodes.filter((n) => n.mhay.includes(q)).map((n) => n.id)) : null;
+  for (const b of E.nodes.children) {
+    const id = b.dataset.node;
+    const sel = id === S.selected;
+    b.classList.toggle('is-sel', sel);
+    b.setAttribute('aria-pressed', String(sel));
+    b.classList.toggle('is-near', !!active && near.has(id));
+    b.classList.toggle('is-match', !!match && match.has(id));
+    b.classList.toggle('is-dim', active ? !near.has(id) : !!match && !match.has(id));
+  }
+  const lit = !!active || !!match;
+  E.svg.classList.toggle('has-active', lit);
+  const raise = [];
+  for (const g of Array.from(E.svg.children)) {
+    const isHot = active ? hot.has(g.dataset.edge) : !!match && (match.has(g.dataset.from) || match.has(g.dataset.to));
+    g.classList.toggle('is-hot', isHot);
+    if (isHot) raise.push(g);
+  }
+  raise.forEach((g) => E.svg.appendChild(g));
+  if (q) {
+    const hidden = count(D.nodes, (n) => n.mhay.includes(q)) - (match ? match.size : 0);
+    E.qCount.textContent = `${plural(match.size, 'match', 'matches')}${hidden > 0 ? `, ${hidden} hidden by filters` : ''}`;
+  } else E.qCount.textContent = '';
+}
+
+function updateMapControls() {
+  E.focusBtn.disabled = !S.selected;
+  E.focusBtn.setAttribute('aria-pressed', String(S.focus));
+  E.focusBtn.textContent = S.focus ? 'Exit focus' : 'Focus';
+  for (const c of E.kindChips.children) c.setAttribute('aria-pressed', String(c.dataset.kind ? S.kinds.has(c.dataset.kind) : S.longTail));
+  for (const c of E.statusChips.children) c.setAttribute('aria-pressed', String(S.statuses.has(c.dataset.status)));
+  for (const c of $$('[data-type]', E.legend)) c.setAttribute('aria-pressed', String(S.types.has(c.dataset.type)));
+  for (const c of $$('[data-evidence]', E.legend)) c.setAttribute('aria-pressed', String(S.evidence.has(c.dataset.evidence)));
+  E.catSel.value = S.cat;
+  $('#view-map').dataset.focus = String(S.focus);
+}
+
+function buildMapControls() {
+  E.kindChips.replaceChildren(...KINDS_IN.map((k) => h('button', { type: 'button', class: 'chip', 'data-kind': k, 'aria-pressed': 'true' },
+    h('i', { class: `kg kg-${k}`, 'aria-hidden': 'true' }), KIND_PL[k], h('span', { class: 'c', text: String(count(D.nodes, (n) => n.kind === k)) }))),
+  ...(INDIRECT ? [h('button', { type: 'button', class: 'chip', 'data-longtail': 'true', 'aria-pressed': String(S.longTail), title: 'Tools that link only to other providers, not to a product' }, 'Indirect tools', h('span', { class: 'c', text: String(INDIRECT) }))] : []));
+  const statusTitle = { live: 'Observed in a live provider or DNS read; not necessarily a passing product journey', configured: 'Set up in config or an account; not observed in a live read', historical: 'Past use', unknown: 'Status not established' };
+  E.statusChips.replaceChildren(...STATUSES_IN.map((s) => h('button', { type: 'button', class: 'chip', 'data-status': s, 'aria-pressed': 'true', title: statusTitle[s] },
+    h('i', { class: `stg s-${s}`, 'aria-hidden': 'true' }), s, h('span', { class: 'c', text: String(count(D.nodes, (n) => n.status === s)) }))));
+  const catCount = (c) => count(D.nodes, (n) => n.kind !== 'product' && n.category === c);
+  E.catSel.replaceChildren(h('option', { value: 'all', text: 'All categories' }), ...CATS.filter((c) => catCount(c) > 0).map((c) => h('option', { value: c, text: `${CAT_TITLE[c]} (${catCount(c)})` })));
+  const typeChips = TYPES_IN.map((t) => h('button', { type: 'button', class: 'chip', 'data-type': t, 'aria-pressed': 'true', title: `Show or hide ${t} relationships` },
+    sw(t), t, h('span', { class: 'c', text: String(count(D.edges, (e) => e.type === t)) })));
+  const evChips = TIERS.map((tier) => {
+    const n = count(D.edges, (e) => e.tier === tier);
+    return h('button', { type: 'button', class: 'chip', 'data-evidence': tier, 'aria-pressed': 'true', title: TIER_TITLE[tier], disabled: n ? null : true }, sw('other', tier), TIER_ONE[tier], h('span', { class: 'c', text: String(n) }));
+  });
+  E.legend.replaceChildren(...typeChips, typeChips.length ? h('span', { class: 'sep', 'aria-hidden': 'true' }) : null, ...evChips);
+}
+
+function moveCursor(id) {
+  const b = E.nodes.querySelector(`[data-node="${CSS.escape(id)}"]`);
+  if (!b) return;
+  for (const o of E.nodes.querySelectorAll('[tabindex="0"]')) o.tabIndex = -1;
+  b.tabIndex = 0;
+  cursorId = id;
+  b.focus();
+}
+function neighborItem(it, key) {
+  const colItems = (c) => LAY.items.filter((o) => o.col === c).sort((a, b) => a.y - b.y);
+  if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'Home' || key === 'End') {
+    const list = colItems(it.col);
+    const i = list.indexOf(it);
+    if (key === 'Home') return list[0];
+    if (key === 'End') return list[list.length - 1];
+    return list[i + (key === 'ArrowDown' ? 1 : -1)];
+  }
+  const ci = LAY.cols.indexOf(it.col) + (key === 'ArrowRight' ? 1 : -1);
+  if (ci < 0 || ci >= LAY.cols.length) return null;
+  const y = it.y + it.h / 2;
+  return colItems(LAY.cols[ci]).reduce((best, o) => (!best || Math.abs(o.y + o.h / 2 - y) < Math.abs(best.y + best.h / 2 - y) ? o : best), null);
+}
+
+/* ---------- selection and views ---------- */
+function select(id, opts = {}) {
+  const prev = S.selected;
+  S.selected = id && D.byId.has(id) ? id : null;
+  if (!S.selected) S.focus = false;
+  if (S.selected && opts.cursor !== false) cursorId = S.selected;
+  render();
+  if (S.selected && S.selected !== prev) {
+    const n = D.byId.get(S.selected);
+    announce(`${n.label} selected. ${plural(n.links.length, 'relationship')}.`);
+  }
+}
+function setView(v, push = true) {
+  if (!VIEWS.includes(v)) return;
+  const changed = S.view !== v;
+  S.view = v;
+  if (v !== 'map') S.hover = null;
+  if (v !== 'evidence') S.flash = null;
+  if (changed && push) { try { history.pushState(null, '', '#' + hashFor()); } catch (e) { /* some file:// contexts refuse history writes; the view still switches */ } }
+  render();
+  setActivePane(document.getElementById('view-' + v));
+}
+function hashFor() {
+  let s = S.view;
+  if (S.view === 'inventory' && S.inv.tab === 'edges') s += '/relationships';
+  if ((S.view === 'map' || S.view === 'inventory') && S.selected) s += '/' + S.selected + (S.view === 'map' && S.focus ? '/focus' : '');
+  if (S.view === 'evidence' && S.flash) s += '/' + S.flash;
+  return s;
+}
+function readHash() {
+  const parts = decodeURIComponent(location.hash.replace(/^#/, '')).split('/').filter(Boolean);
+  const v = VIEWS.includes(parts[0]) ? parts[0] : 'map';
+  S.view = v;
+  S.flash = null;
+  if (v === 'inventory' && parts[1] === 'relationships') { S.inv.tab = 'edges'; parts.splice(1, 1); }
+  if (v === 'map' || v === 'inventory') {
+    S.selected = parts[1] && D.byId.has(parts[1]) ? parts[1] : null;
+    S.focus = v === 'map' && !!S.selected && parts[2] === 'focus';
+    if (S.selected) cursorId = S.selected;
+  }
+  if (v === 'evidence' && parts[1]) S.flash = parts[1];
+}
+function setActivePane(p) {
+  if (!p) return;
+  for (const o of $$('.pane')) o.classList.toggle('is-active', o === p);
+}
+
+function render() {
+  document.body.dataset.view = S.view;
+  for (const t of $$('.tab')) {
+    const on = t.dataset.view === S.view;
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
+  }
+  for (const v of VIEWS) document.getElementById('view-' + v).hidden = v !== S.view;
+  if (S.view === 'map') {
+    if (currentMapKey() !== mapKey || (!LAY && !D.empty)) renderMap();
+    else { paint(); updateMapControls(); }
+  }
+  if (S.view === 'inventory') renderInventory();
+  if (S.view === 'directions' && !dirBuilt) { renderDirections(); dirBuilt = true; }
+  if (S.view === 'evidence') { if (!evBuilt) { renderEvidence(); evBuilt = true; } flashSource(); }
+  renderDetail();
+  const hs = hashFor();
+  if (location.hash.replace(/^#/, '') !== hs) { try { history.replaceState(null, '', '#' + hs); } catch (e) { /* see setView */ } }
+}
+
+/* ---------- detail ---------- */
+function unknownText(s) { return isUnknown(s) ? h('span', { class: 'unk', text: s || 'Unknown' }) : s; }
+function srcList(ids) {
+  if (!ids.length) return h('span', { class: 'unk', text: 'None cited' });
+  return h('div', { class: 'srcs' }, ids.map((id) => {
+    const s = D.srcById.get(id);
+    return h('div', { class: 'srcrow' }, h('span', { class: 'lvl', text: s ? s.level : 'missing' }),
+      h('button', { type: 'button', class: 'link', 'data-src': id, title: s ? s.result : 'Source not found in data', text: s ? s.label : id }));
+  }));
+}
+function renderDetail() {
+  const show = !D.empty && (S.view === 'map' || S.view === 'inventory');
+  E.detail.hidden = !show;
+  E.desk.classList.toggle('solo', !show);
+  if (!show) return;
+  const n = S.selected ? D.byId.get(S.selected) : null;
+  E.detail.classList.toggle('is-open', !!n);
+  E.detail.dataset.node = n ? n.id : '';
+  const key = (n ? n.id : '') + '|' + S.view + '|' + S.focus;
+  if (key === lastDetail) return;
+  const sameNode = lastDetail.split('|')[0] === (n ? n.id : '');
+  lastDetail = key;
+  if (!n) { renderOverview(); return; }
+  E.dHead.replaceChildren(
+    h('div', { class: 'grow' }, h('h2', { class: 'd-title', tabindex: '-1', text: n.label }), h('div', { class: 'd-sub', text: `${KIND_ONE[n.kind]}, ${CAT_ONE[n.category]}` })),
+    h('button', { type: 'button', class: 'btn', 'data-act': 'clear', text: 'Close' }),
+  );
+  const facts = h('dl', { class: 'facts' },
+    h('dt', { text: 'Status' }), h('dd', { 'data-field': 'status' }, STATUS_ONE[n.status]),
+    h('dt', { text: 'Owner' }), h('dd', { 'data-field': 'owner' }, unknownText(n.owner)),
+    h('dt', { text: 'Cost' }), h('dd', { 'data-field': 'cost' }, unknownText(n.cost)),
+    h('dt', { text: 'Repos' }), h('dd', { 'data-field': 'repos' }, n.repos.length ? n.repos.join(', ') : h('span', { class: 'unk', text: 'None recorded' })),
+    n.kind === 'product' ? [h('dt', { text: 'Neighbors' }), h('dd', { text: plural(n.otherCount, 'provider or tool', 'providers and tools') })] : [h('dt', { text: 'Used by' }), h('dd', { text: plural(n.productCount, 'product') })],
+    h('dt', { text: 'Sources' }), h('dd', { 'data-field': 'sources' }, srcList(n.sources)),
+  );
+  const groups = TYPES_IN.map((t) => [t, n.links.filter((l) => l.e.type === t)]).filter(([, ls]) => ls.length);
+  const rels = h('div', { class: 'd-sec' }, h('h3', { text: `Relationships (${n.links.length})` }),
+    n.links.length ? groups.map(([t, ls]) => h('div', { class: 'relgroup' },
+      h('div', { class: 'h3' }, sw(t), t),
+      ls.sort((a, b) => byLabel(a.other, b.other)).map((l) => {
+        return h('div', { class: 'rel' },
+          sw(t, l.e.tier),
+          h('span', null, h('span', { class: 'muted', text: l.dir === 'out' ? 'to ' : 'from ' }), h('button', { type: 'button', class: 'link', 'data-select': l.other.id, text: l.other.label })),
+          h('span', { class: 'ev', title: TIER_TITLE[l.e.tier], text: evidenceText(l.e) }),
+          l.e.label ? h('span', { class: 'lbl', text: l.e.label }) : null);
+      }))) : h('p', { class: 'muted', text: 'No relationships recorded.' }));
+  const listSec = (title, items, cls) => (items.length ? h('div', { class: 'd-sec' }, h('h3', { text: title }), h('ul', { class: 'list ' + (cls || '') }, items.map((s) => h('li', null, rich(s))))) : null);
+  const inMap = S.view === 'map';
+  E.dBody.replaceChildren(
+    n.summary ? h('p', { class: 'd-sum' }, rich(n.summary)) : null,
+    facts,
+    rels,
+    listSec('Strengths for agent operation', n.strengths, 'plus'),
+    listSec('Weaknesses for agent operation', n.weaknesses, 'minus'),
+    listSec('Details', n.details),
+    h('div', { class: 'actions' },
+      inMap ? h('button', { type: 'button', class: 'btn', 'data-act': 'focus', 'aria-pressed': String(S.focus), text: S.focus ? 'Exit focus' : 'Focus neighborhood' }) : h('button', { type: 'button', class: 'btn', 'data-goto': n.id, text: 'Show on map' }),
+      inMap ? h('button', { type: 'button', class: 'btn', 'data-act': 'inventory', text: 'Show in inventory' }) : null),
+  );
+  if (!sameNode) E.dBody.scrollTop = 0;
+}
+function renderOverview() {
+  E.detail.dataset.node = '';
+  E.dHead.replaceChildren(h('div', { class: 'grow' }, h('h2', { class: 'd-title', text: 'Overview' }), h('div', { class: 'd-sub', text: D.meta.date ? `Demo authored ${D.meta.date}` : 'Research date not recorded' })));
+  if (D.empty) { E.dBody.replaceChildren(unfinished()); return; }
+  const rec = D.directions[0];
+  const kc = (k) => count(D.nodes, (n) => n.kind === k);
+  const tierCount = TIERS.map((tier) => count(D.edges, (e) => e.tier === tier)).join(', ');
+  E.dBody.replaceChildren(
+    D.meta.coverage ? h('p', { class: 'd-sum' }, D.meta.coverage) : null,
+    h('div', { class: 'stat' },
+      KINDS_IN.map((k) => h('div', null, h('span', { text: KIND_PL[k] }), h('b', { text: String(kc(k)) }))),
+      h('div', null, h('span', { text: 'Relationships' }), h('b', { text: String(D.edges.length) })),
+      h('div', null, h('span', { text: 'Provider, documentary, inferred' }), h('b', { text: tierCount })),
+      h('div', null, h('span', { text: 'Sources' }), h('b', { text: String(D.sources.length) })),
+      h('div', null, h('span', { text: 'Open gaps' }), h('b', { text: String(D.gaps.length) }))),
+    rec ? h('div', { class: 'd-sec' }, h('h3', { text: 'Proposed operating model' }),
+      h('div', { class: 'recbox' }, h('div', { class: 'nm', text: rec.name }), rec.stance ? h('div', { class: 'muted', text: rec.stance }) : null, rec.decision ? h('p', { class: 'd-sum' }, rich(rec.decision)) : null),
+      h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn', 'data-view-go': 'directions', text: 'Compare directions' }))) : null,
+    h('div', { class: 'd-sec' }, h('h3', { text: 'Reading the map' }),
+      h('ul', { class: 'list' },
+        h('li', null, 'Products sit in the center. Reach and operations are on the left, runtime on the right.'),
+        h('li', null, 'Line color is the relationship type. Solid lines are positive provider proof from a successful API, CLI or DNS read. Dotted lines are documentary: repository source or config, docs, pricing, or a record of a failed or unattributed probe. Dashed lines are inferred. No line style shows traffic or service health.'),
+        h('li', null, 'The square on each node is its status: filled for a live observation in a provider or DNS read (not necessarily a passing product journey), outlined when only configured, a dash when historical, dotted when unknown.'),
+        KINDS_IN.filter((k) => !DEFAULT_KINDS.has(k)).map((k) => h('li', null, `${KIND_PL[k]} (${count(D.nodes, (n) => n.kind === k)}) start hidden so labels stay readable. Turn them on with the ${KIND_PL[k]} chip; Inventory lists everything.`)),
+        DEFAULT_LONGTAIL ? null : h('li', null, `Tools that link only to other providers (${INDIRECT}) start hidden so labels stay readable. Turn them on with Indirect tools; Inventory lists everything.`),
+        h('li', null, 'Select a node for its owner, cost, repos, status and sources.'))),
+  );
+}
+function unfinished() {
+  if (D.error) return h('div', { class: 'notice' }, h('h2', { text: 'Embedded data could not be read' }), h('p', { text: D.error }), h('p', { text: 'Rebuild this file from valid JSON.' }));
+  return h('div', { class: 'notice', 'data-state': 'unfinished' }, h('h2', { text: 'Unfinished: research data not embedded' }),
+    h('p', { text: 'This file is the page shell only. It shows no inventory, relationships or directions until the final research payload is embedded.' }));
+}
+
+/* ---------- inventory ---------- */
+const nodeBtn = (id) => { const n = D.byId.get(id); return h('button', { type: 'button', class: 'link', 'data-select': id, text: n ? n.label : id }); };
+const srcIds = (ids) => (ids.length ? h('span', { class: 'ids' }, ids.map((id) => h('button', { type: 'button', class: 'idbtn', 'data-src': id, title: D.srcById.get(id) ? D.srcById.get(id).label : 'Source not found in data', text: id }))) : h('span', { class: 'unk', text: 'None' }));
+const NODE_COLS = [
+  { key: 'label', label: 'Name', get: (n) => n.label, cell: (n) => h('button', { type: 'button', class: 'link cell-name', 'data-select': n.id, text: n.label }) },
+  { key: 'kind', label: 'Kind', get: (n) => KINDS.indexOf(n.kind), cell: (n) => KIND_ONE[n.kind] },
+  { key: 'category', label: 'Category', get: (n) => CAT_ONE[n.category], cell: (n) => CAT_ONE[n.category] },
+  { key: 'status', label: 'Status', get: (n) => STATUSES.indexOf(n.status), cell: (n) => STATUS_ONE[n.status] },
+  { key: 'owner', label: 'Owner', text: true, get: (n) => n.owner, cell: (n) => unknownText(n.owner) },
+  { key: 'cost', label: 'Cost', text: true, get: (n) => n.cost, cell: (n) => unknownText(n.cost) },
+  { key: 'repos', label: 'Repos', text: true, get: (n) => n.repos.join(', '), cell: (n) => (n.repos.length ? n.repos.join(', ') : h('span', { class: 'unk', text: 'None' })) },
+  { key: 'links', label: 'Links', num: true, get: (n) => n.links.length, cell: (n) => String(n.links.length) },
+  { key: 'levels', label: 'Seen via', get: (n) => (n.levels.length ? LEVEL_RANK[n.levels[0]] : 99), cell: (n) => (n.levels.length ? n.levels.join(', ') : h('span', { class: 'unk', text: 'No source' })) },
+  { key: 'sources', label: 'Sources', num: true, get: (n) => n.sources.length, cell: (n) => srcIds(n.sources) },
+];
+const EDGE_COLS = [
+  { key: 'from', label: 'From', get: (e) => D.byId.get(e.from).label, cell: (e) => nodeBtn(e.from) },
+  { key: 'type', label: 'Type', get: (e) => TYPES.indexOf(e.type), cell: (e) => h('span', null, sw(e.type, e.tier), ' ', e.type) },
+  { key: 'to', label: 'To', get: (e) => D.byId.get(e.to).label, cell: (e) => nodeBtn(e.to) },
+  { key: 'label', label: 'Label', text: true, get: (e) => e.label, cell: (e) => e.label || h('span', { class: 'unk', text: 'None' }) },
+  { key: 'evidence', label: 'Evidence', get: (e) => TIERS.indexOf(e.tier) * 10 + (LEVEL_RANK[edgeLevel(e)] ?? 9), cell: (e) => evidenceText(e) },
+  { key: 'sources', label: 'Sources', num: true, get: (e) => e.sources.length, cell: (e) => srcIds(e.sources) },
+];
+function cmp(col, dir) {
+  return (a, b) => {
+    const x = col.get(a);
+    const y = col.get(b);
+    if (col.text) {
+      const ux = isUnknown(x) || x === '';
+      const uy = isUnknown(y) || y === '';
+      if (ux !== uy) return ux ? 1 : -1;
+    }
+    const r = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'en', { sensitivity: 'base', numeric: true });
+    return r * dir;
+  };
+}
+function invFilterControls() {
+  const I = S.inv;
+  const mk = (id, label, value, opts) => h('label', null, h('span', { class: 'sr-only', text: label }),
+    h('select', { class: 'sel', id, 'data-inv-filter': id }, opts.map(([v, t]) => h('option', { value: v, text: t, selected: v === value ? true : null }))));
+  if (I.tab === 'nodes') return [
+    mk('inv-kind', 'Kind', I.kind, [['all', 'All kinds'], ...KINDS_IN.map((k) => [k, KIND_PL[k]])]),
+    mk('inv-status', 'Status', I.status, [['all', 'All statuses'], ...STATUSES.filter((s) => D.nodes.some((n) => n.status === s)).map((s) => [s, STATUS_ONE[s]])]),
+    mk('inv-cat', 'Category', I.cat, [['all', 'All categories'], ...CATS.filter((c) => D.nodes.some((n) => n.category === c)).map((c) => [c, CAT_TITLE[c]])]),
+  ];
+  return [
+    mk('inv-type', 'Type', I.type, [['all', 'All types'], ...TYPES_IN.map((t) => [t, t])]),
+    mk('inv-evidence', 'Evidence', I.evidence, [['all', 'All evidence'], ['live', 'Provider read'], ['config', 'Documentary'], ['inference', 'Inferred']]),
+  ];
+}
+let invKey = '';
+let invSel = null;
+function renderInventory() {
+  const I = S.inv;
+  const nodesTab = I.tab === 'nodes';
+  const key = [I.tab, I.q, I.kind, I.status, I.cat, I.type, I.evidence, ...I.sort[I.tab]].join('|');
+  if (key !== invKey) {
+    invKey = key;
+    buildInventory(nodesTab);
+    invSel = null;
+  }
+  const sel = S.selected;
+  for (const tr of E.invWrap.querySelectorAll('tr.row')) {
+    tr.classList.toggle('is-sel', !tr.dataset.edge && tr.dataset.row === sel);
+    tr.classList.toggle('is-near', !!tr.dataset.edge && !!sel && (tr.dataset.from === sel || tr.dataset.to === sel));
+  }
+  if (sel !== invSel) {
+    invSel = sel;
+    const tr = sel && nodesTab ? E.invWrap.querySelector(`tr[data-row="${CSS.escape(sel)}"]`) : null;
+    if (tr) { const head = E.invWrap.querySelector('thead'); scrollWithin(E.invWrap, tr, 'nearest', head ? head.offsetHeight : 0); }
+  }
+}
+function buildInventory(nodesTab) {
+  const I = S.inv;
+  const tN = $('#inv-tab-nodes');
+  const tE = $('#inv-tab-edges');
+  tN.replaceChildren('Nodes ', h('span', { class: 'c', text: String(D.nodes.length) }));
+  tE.replaceChildren('Relationships ', h('span', { class: 'c', text: String(D.edges.length) }));
+  tN.setAttribute('aria-selected', String(nodesTab)); tN.tabIndex = nodesTab ? 0 : -1;
+  tE.setAttribute('aria-selected', String(!nodesTab)); tE.tabIndex = nodesTab ? -1 : 0;
+  if (E.invQ.value !== I.q) E.invQ.value = I.q;
+  const active = document.activeElement;
+  const keepFocus = active && active.dataset && active.dataset.invFilter;
+  E.invFilters.replaceChildren(...invFilterControls());
+  if (keepFocus) { const f = document.getElementById(keepFocus); if (f) f.focus(); }
+  if (D.empty) { E.invWrap.replaceChildren(h('div', { class: 'doc-inner' }, unfinished())); E.invCount.textContent = ''; return; }
+  const q = I.q.trim().toLowerCase();
+  const cols = nodesTab ? NODE_COLS : EDGE_COLS;
+  let rows;
+  if (nodesTab) {
+    rows = D.nodes.filter((n) => (I.kind === 'all' || n.kind === I.kind) && (I.status === 'all' || n.status === I.status) && (I.cat === 'all' || n.category === I.cat) && (!q || n.hay.includes(q)));
+  } else {
+    rows = D.edges.filter((e) => (I.type === 'all' || e.type === I.type) && (I.evidence === 'all' || e.tier === I.evidence) &&
+      (!q || [D.byId.get(e.from).label, D.byId.get(e.to).label, e.type, e.label, TIER_ONE[e.tier], edgeLevel(e) || '', e.sources.join(' ')].join(' ').toLowerCase().includes(q)));
+  }
+  const [sk, sd] = I.sort[I.tab];
+  const sc = cols.find((c) => c.key === sk) || cols[0];
+  rows = rows.slice().sort((a, b) => cmp(sc, sd)(a, b) || (nodesTab ? byLabel(a, b) : 0));
+  E.invCount.textContent = `Showing ${rows.length} of ${nodesTab ? D.nodes.length : D.edges.length}`;
+  const thead = h('thead', null, h('tr', null, cols.map((c) => h('th', { scope: 'col', 'aria-sort': c.key === sk ? (sd > 0 ? 'ascending' : 'descending') : null },
+    h('button', { type: 'button', class: 'sort', 'data-sort': c.key }, c.label, c.key === sk ? h('span', { class: 'ar', 'aria-hidden': 'true', text: sd > 0 ? '\u2191' : '\u2193' }) : null)))));
+  const tbody = h('tbody', null, rows.length
+    ? rows.map((r) => h('tr', nodesTab ? { class: 'row', 'data-row': r.id } : { class: 'row', 'data-row': r.from, 'data-edge': r.id, 'data-from': r.from, 'data-to': r.to },
+      cols.map((c) => h('td', { class: c.num ? 'num' : null, 'data-label': c.label }, c.cell(r)))))
+    : h('tr', { class: 'empty-row' }, h('td', { colspan: String(cols.length) }, 'Nothing matches. Clear the search or filters.')));
+  E.invWrap.replaceChildren(h('table', { class: `inv-table${nodesTab ? '' : ' edges-t'}`, id: nodesTab ? 'node-table' : 'edge-table' }, thead, tbody));
+}
+
+/* ---------- directions ---------- */
+function subnav(label, items) {
+  return h('nav', { class: 'subnav', 'aria-label': label }, items.map(([id, text]) => h('button', { type: 'button', class: 'chip', 'data-jump': id, text })));
+}
+function renderDirections() {
+  if (D.empty) { E.dirDoc.replaceChildren(h('div', { class: 'doc-inner' }, h('div', { class: 'sec' }, unfinished()))); return; }
+  const dirs = D.directions;
+  const rec = dirs[0];
+  const secs = [];
+  secs.push(h('section', { class: 'sec', id: 'dir-rec' }, h('h2', { text: 'Recommendation' }),
+    rec ? h('div', { class: 'rec', 'data-direction': rec.id, 'data-rank': String(rec.rank) },
+      h('p', { class: 'nm', text: rec.name }),
+      h('div', { class: 'meta', text: `Ranked ${rec.rank} of ${dirs.length}${rec.stance ? ', ' + rec.stance.toLowerCase() : ''}` }),
+      rec.decision ? h('p', null, rich(rec.decision)) : null) : h('p', { class: 'unk', text: 'No directions in the data.' })));
+  if (dirs.length) {
+    const ASPECTS = [['decision', 'Decision'], ['moves', 'Moves'], ['cost', 'Cost'], ['sources', 'Sources'], ['risk', 'Risks'], ['givesUp', 'Gives up'], ['ergonomics', 'Agent ergonomics'], ['prerequisites', 'Prerequisites']];
+    secs.push(h('section', { class: 'sec', id: 'dir-compare' }, h('h2', { text: 'Compare directions' }),
+      h('p', { class: 'cap', text: 'Ranked best first. Read across a row to compare one aspect. Each source ID opens its Evidence row; IDs are records, not independent proof.' }),
+      h('div', { class: 'compare', vars: { '--n': String(dirs.length) } }, dirs.map((d, i) => h('article', { class: `dcol${i === 0 ? ' is-rec' : ''}`, 'data-direction': d.id, 'data-rank': String(d.rank), 'aria-label': `Rank ${d.rank}: ${d.name}` },
+        h('div', { class: 'dcell dhead' }, h('span', { class: 'rk', text: i === 0 ? `Rank ${d.rank}, recommended` : `Rank ${d.rank}` }), h('span', { class: 'nm', text: d.name }), d.stance ? h('span', { class: 'stance', text: d.stance }) : null),
+        ASPECTS.map(([k, label]) => h('div', { class: 'dcell' }, h('h4', { text: label }),
+          k === 'sources' ? (d.sources.length ? srcIds(d.sources) : h('p', { class: 'unk', text: 'None cited' })) : Array.isArray(d[k]) ? (d[k].length ? h('ul', { class: 'list' }, d[k].map((s) => h('li', null, rich(s)))) : h('p', { class: 'unk', text: 'None listed' })) : d[k] ? h('p', null, rich(d[k])) : h('p', { class: 'unk', text: 'Not stated' }))))))));
+  }
+  const prods = D.nodes.filter((n) => n.kind === 'product').sort(byLabel);
+  const usedTypes = TYPES_IN.filter((t) => D.edges.some((e) => e.type === t && (D.byId.get(e.from).kind === 'product') !== (D.byId.get(e.to).kind === 'product')));
+  const hasSpread = prods.length > 0 && usedTypes.length > 0;
+  if (hasSpread) {
+    const cell = (p, t) => {
+      const m = new Map();
+      for (const l of p.links) if (l.e.type === t && l.other.kind !== 'product') { const prev = m.get(l.other.id); m.set(l.other.id, prev && TIERS.indexOf(prev) < TIERS.indexOf(l.e.tier) ? prev : l.e.tier); }
+      return m;
+    };
+    const distinct = (t) => { const s = new Set(); prods.forEach((p) => cell(p, t).forEach((_, id) => s.add(id))); return s.size; };
+    secs.push(h('section', { class: 'sec', id: 'dir-spread' }, h('h2', { text: 'Current spread' }),
+      h('p', { class: 'cap', text: 'Which provider each product uses for each relationship type, derived from the map. Solid underline: provider read; dotted: documentary; dashed: inferred. None of these shows traffic or health.' }),
+      h('div', { class: 'wide' }, h('table', { class: 'spread', id: 'spread-table' },
+        h('thead', null, h('tr', null, h('th', { scope: 'col' }, h('span', { class: 'thl', text: 'Product' })), usedTypes.map((t) => h('th', { scope: 'col' }, h('span', { class: 'thl' }, sw(t), t))))),
+        h('tbody', null, prods.map((p) => h('tr', null, h('th', { scope: 'row', class: 'rowh' }, h('button', { type: 'button', class: 'ref', 'data-goto': p.id, text: p.label })),
+          usedTypes.map((t) => { const m = cell(p, t); return h('td', null, m.size ? [...m.entries()].map(([id, tier]) => h('span', { class: `prov${tier === 'live' ? '' : tier === 'config' ? ' cfg' : ' inf'}` }, h('button', { type: 'button', class: 'ref', 'data-goto': id, title: TIER_TITLE[tier], text: D.byId.get(id).label }))) : h('span', { class: 'unk', text: '\u2013' })); })))),
+        h('tfoot', null, h('tr', null, h('td', { text: 'Distinct providers' }), usedTypes.map((t) => h('td', { text: String(distinct(t)) }))))))));
+  }
+  const provs = D.nodes.filter((n) => n.kind === 'provider' || n.kind === 'tool').sort((a, b) => b.productCount - a.productCount || byLabel(a, b));
+  if (provs.length) {
+    secs.push(h('section', { class: 'sec', id: 'dir-fit' }, h('h2', { text: 'Provider fit' }),
+      h('p', { class: 'cap', text: 'Operating strengths and weaknesses for agents, ordered by how many products use each provider.' }),
+      h('div', { class: 'wide' }, h('table', { id: 'fit-table' },
+        h('thead', null, h('tr', null, ['Provider', 'Used by', 'Strengths', 'Weaknesses', 'Cost', 'Status'].map((t) => h('th', { scope: 'col' }, h('span', { class: 'thl', text: t }))))),
+        h('tbody', null, provs.map((n) => h('tr', null,
+          h('td', null, h('button', { type: 'button', class: 'ref cell-name', 'data-goto': n.id, text: n.label }), h('div', { class: 'cell-sub', text: `${KIND_ONE[n.kind]}, ${CAT_ONE[n.category]}` })),
+          h('td', { class: 'num', text: plural(n.productCount, 'product') }),
+          h('td', null, n.strengths.length ? h('ul', { class: 'list plus' }, n.strengths.map((s) => h('li', null, rich(s)))) : h('span', { class: 'unk', text: 'None recorded' })),
+          h('td', null, n.weaknesses.length ? h('ul', { class: 'list minus' }, n.weaknesses.map((s) => h('li', null, rich(s)))) : h('span', { class: 'unk', text: 'None recorded' })),
+          h('td', null, unknownText(n.cost)),
+          h('td', { text: STATUS_ONE[n.status] }))))))));
+  }
+  secs.push(h('section', { class: 'sec', id: 'dir-alt' }, h('h2', { text: 'Unused options' }),
+    h('p', { class: 'cap', text: 'Optional providers outside this fictional workspace. Source links the vendor page; IDs under it open their Evidence rows.' }),
+    D.alternatives.length ? h('div', { class: 'wide' }, h('table', { id: 'alt-table' },
+      h('thead', null, h('tr', null, ['Option', 'For', 'Why consider it', 'Tradeoff', 'Source'].map((t) => h('th', { scope: 'col' }, h('span', { class: 'thl', text: t }))))),
+      h('tbody', null, D.alternatives.map((a) => h('tr', { 'data-alternative': a.name },
+        h('td', { class: 'cell-name', text: a.name }), h('td', { text: a.use }), h('td', null, rich(a.why)), h('td', null, rich(a.tradeoff)),
+        h('td', null, a.source ? h('a', { href: a.source, target: '_blank', rel: 'noopener noreferrer', text: new URL(a.source).hostname }) : a.sourceText || !a.sources.length ? h('span', { class: 'unk', text: a.sourceText || 'None' }) : null,
+          a.sources.length ? srcIds(a.sources) : null)))))) : h('p', { class: 'unk', text: 'None listed.' })));
+  if (dirs.length) {
+    secs.push(h('section', { class: 'sec', id: 'dir-ranked' }, h('h2', { text: 'Ranked recommendation' }),
+      h('p', { class: 'cap', text: 'The directions in order, best first, after the analysis above.' }),
+      h('ol', { class: 'ranked', id: 'ranked-list' }, dirs.map((d) => h('li', { 'data-direction': d.id, 'data-rank': String(d.rank) },
+        h('span', { class: 'rk', 'aria-hidden': 'true', text: String(d.rank) }),
+        h('span', { class: 'nm' }, h('span', { class: 'sr-only', text: `Rank ${d.rank}: ` }), d.name),
+        d.stance ? h('span', { class: 'stance', text: d.stance }) : null,
+        d.decision ? h('p', null, rich(d.decision)) : null)))));
+  }
+  const nav = [['dir-rec', 'Recommendation'], dirs.length ? ['dir-compare', 'Compare'] : null, hasSpread ? ['dir-spread', 'Current spread'] : null, provs.length ? ['dir-fit', 'Provider fit'] : null, ['dir-alt', 'Unused options'], dirs.length ? ['dir-ranked', 'Ranked recommendation'] : null].filter(Boolean);
+  E.dirDoc.replaceChildren(subnav('Directions sections', nav), h('div', { class: 'doc-inner' }, secs));
+}
+
+/* ---------- evidence ---------- */
+function citedText(id) {
+  const c = D.cited.get(id);
+  if (!c) return '';
+  const parts = [];
+  if (c.nodes.length) parts.push(plural(c.nodes.length, 'node'));
+  if (c.edges.length) parts.push(plural(c.edges.length, 'link'));
+  if (c.findings.length) parts.push(plural(c.findings.length, 'finding'));
+  if (c.directions.length) parts.push(plural(c.directions.length, 'direction'));
+  if (c.alternatives.length) parts.push(plural(c.alternatives.length, 'unused option'));
+  return parts.join(', ') || 'Not cited';
+}
+function sourceRows() {
+  const q = S.srcQ.trim().toLowerCase();
+  const rows = D.sources.filter((s) => (S.srcLevel === 'all' || s.level === S.srcLevel) && (!q || [s.id, s.label, s.level, s.result, s.date, s.url].join(' ').toLowerCase().includes(q)));
+  return rows.length ? rows.map((s) => h('tr', { id: 'src-' + s.id, 'data-source': s.id },
+    h('td', null, h('span', { class: 'cell-name', text: s.id })),
+    h('td', { text: s.label }),
+    h('td', null, h('span', { class: 'lvl-pill', text: s.level })),
+    h('td', { text: s.date || '' }),
+    h('td', { text: s.result }),
+    h('td', null, s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener noreferrer', text: new URL(s.url).hostname }) : h('span', { class: 'unk', text: 'None' })),
+    h('td', { class: 'num', text: citedText(s.id) }))) : [h('tr', { class: 'empty-row' }, h('td', { colspan: '7', text: 'No sources match.' }))];
+}
+function renderEvidence() {
+  if (D.empty) { E.evDoc.replaceChildren(h('div', { class: 'doc-inner' }, h('div', { class: 'sec' }, unfinished()))); return; }
+  const lv = Object.keys(LEVEL_RANK).map((l) => [l, l, count(D.sources, (s) => s.level === l)]).filter(([, , n]) => n);
+  const secs = [
+    h('section', { class: 'sec', id: 'ev-coverage' }, h('h2', { text: 'Coverage' }),
+      D.meta.coverage ? h('p', { class: 'cap', css: 'color:var(--fg)', text: D.meta.coverage }) : null,
+      D.meta.limits.length ? [h('h3', { class: 'h3', text: 'Limits' }), h('ul', { class: 'list' }, D.meta.limits.map((s) => h('li', null, rich(s))))] : null),
+    h('section', { class: 'sec', id: 'ev-findings' }, h('h2', { text: 'Findings' }),
+      D.findings.length ? D.findings.map((f) => h('div', { class: 'finding' }, h('h3', { text: f.title }), h('p', null, rich(f.detail)), srcIds(f.evidence))) : h('p', { class: 'unk', text: 'None recorded.' })),
+    h('section', { class: 'sec', id: 'ev-gaps' }, h('h2', { text: 'Coverage gaps' }),
+      h('p', { class: 'cap', text: 'What the research could not see, and the read that would close each gap.' }),
+      D.gaps.length ? h('div', { class: 'wide' }, h('table', { id: 'gap-table' },
+        h('thead', null, h('tr', null, ['Area', 'What is missing', 'Read needed'].map((t) => h('th', { scope: 'col' }, h('span', { class: 'thl', text: t }))))),
+        h('tbody', null, D.gaps.map((g) => h('tr', null, h('td', { class: 'cell-name', text: g.area }), h('td', null, rich(g.detail)), h('td', { text: g.needed })))))) : h('p', { class: 'unk', text: 'None recorded.' })),
+    h('section', { class: 'sec', id: 'ev-sources' }, h('h2', { text: `Sources (${D.sources.length})` }),
+      h('p', { class: 'cap', text: 'Level says how a fact was seen. api, cli and dns are successful provider reads: positive proof of account or repository metadata, not traffic or health. config covers repository source or config, docs, and records of failed or unattributed probes; pricing is a public price page. Neither proves deployment. Cited by counts the records on this page that cite a source, not independent provider proof.' }),
+      h('div', { class: 'toolbar', css: 'padding:0 0 10px;border:0' },
+        h('label', null, h('span', { class: 'sr-only', text: 'Search sources' }), h('input', { class: 'input', id: 'src-q', type: 'search', placeholder: 'Search sources  /', autocomplete: 'off', spellcheck: 'false' })),
+        h('div', { class: 'group', role: 'group', 'aria-label': 'Source level' }, [['all', 'All', D.sources.length], ...lv].map(([l, label, n]) => h('button', { type: 'button', class: 'chip', 'data-level': l, 'aria-pressed': String(S.srcLevel === l) }, label, h('span', { class: 'c', text: String(n) }))))),
+      h('div', { class: 'wide' }, h('table', { id: 'source-table' },
+        h('thead', null, h('tr', null, ['ID', 'Method', 'Level', 'Date', 'Observation', 'Link', 'Cited by'].map((t) => h('th', { scope: 'col' }, h('span', { class: 'thl', text: t }))))),
+        h('tbody', { id: 'source-body' }, sourceRows())))),
+  ];
+  E.evDoc.replaceChildren(subnav('Evidence sections', [['ev-coverage', 'Coverage'], ['ev-findings', 'Findings'], ['ev-gaps', 'Gaps'], ['ev-sources', 'Sources']]), h('div', { class: 'doc-inner' }, secs));
+}
+function flashSource() {
+  for (const r of $$('tr.is-flash', E.evDoc)) r.classList.remove('is-flash');
+  if (!S.flash) return;
+  const row = document.getElementById('src-' + S.flash);
+  if (!row) return;
+  row.classList.add('is-flash');
+  const nav = E.evDoc.querySelector('.subnav');
+  scrollWithin(E.evDoc, row, 'center', nav ? nav.offsetHeight : 0);
+}
+
+/* ---------- events ---------- */
+function toggleFocus() {
+  if (!S.selected) return;
+  S.focus = !S.focus;
+  S.scale = null;
+  render();
+  E.vp.scrollTop = 0;
+  E.vp.scrollLeft = 0;
+  announce(S.focus ? `Focused on ${D.byId.get(S.selected).label} and its neighbors.` : 'Showing the full map.');
+}
+function resetMap() {
+  S.kinds = new Set(DEFAULT_KINDS);
+  S.longTail = DEFAULT_LONGTAIL;
+  S.statuses = new Set(STATUSES_IN);
+  S.cat = 'all';
+  S.types = new Set(TYPES_IN);
+  S.evidence = new Set(TIERS);
+  S.query = '';
+  E.q.value = '';
+  S.focus = false;
+  S.scale = null;
+  select(null);
+}
+function focusSearch() {
+  const el = S.view === 'map' ? E.q : S.view === 'inventory' ? E.invQ : S.view === 'evidence' ? $('#src-q') : null;
+  if (el) { el.focus(); el.select(); }
+}
+function toggleKeys(open) {
+  const show = open == null ? E.keys.hidden : open;
+  E.keys.hidden = !show;
+  E.keysBtn.setAttribute('aria-expanded', String(show));
+}
+
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest('button, a, tr.row');
+  if (!t) return;
+  if (t.matches('.tab')) { setView(t.dataset.view); return; }
+  if (t.dataset.goto) {
+    const id = t.dataset.goto;
+    if (S.focus && S.selected !== id) S.focus = false;
+    S.selected = D.byId.has(id) ? id : null;
+    cursorId = S.selected;
+    setView('map');
+    const b = S.selected && E.nodes.querySelector(`[data-node="${CSS.escape(S.selected)}"]`);
+    if (b) b.focus();
+    if (S.selected) announce(`${D.byId.get(S.selected).label} selected on the map.`);
+    return;
+  }
+  if (t.dataset.select) {
+    const fromDetail = !!t.closest('#detail');
+    select(t.dataset.select);
+    if (fromDetail) { const title = E.dHead.querySelector('.d-title'); if (title) title.focus(); }
+    return;
+  }
+  if (t.dataset.src) {
+    S.flash = t.dataset.src;
+    if (!evBuilt) { renderEvidence(); evBuilt = true; }
+    S.srcQ = '';
+    S.srcLevel = 'all';
+    const qi = $('#src-q');
+    if (qi) { qi.value = ''; $$('[data-level]', E.evDoc).forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.level === 'all'))); $('#source-body').replaceChildren(...sourceRows()); }
+    setView('evidence');
+    return;
+  }
+  if (t.dataset.level) {
+    S.srcLevel = t.dataset.level;
+    $$('[data-level]', E.evDoc).forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.level === S.srcLevel)));
+    $('#source-body').replaceChildren(...sourceRows());
+    return;
+  }
+  if (t.dataset.viewGo) { setView(t.dataset.viewGo); return; }
+  if (t.dataset.jump) {
+    const s = document.getElementById(t.dataset.jump);
+    const box = s && s.closest('.doc');
+    const nav = box && box.querySelector('.subnav');
+    if (box) scrollWithin(box, s, 'start', nav ? nav.offsetHeight : 0);
+    return;
+  }
+  if (t.dataset.longtail) { S.longTail = !S.longTail; render(); return; }
+  if (t.dataset.kind) { const k = t.dataset.kind; if (S.kinds.has(k)) S.kinds.delete(k); else S.kinds.add(k); render(); return; }
+  if (t.dataset.status) { const k = t.dataset.status; if (S.statuses.has(k)) S.statuses.delete(k); else S.statuses.add(k); render(); return; }
+  if (t.id === 'filters-btn') { const open = t.closest('.toolbar').classList.toggle('is-open'); t.setAttribute('aria-expanded', String(open)); return; }
+  if (t.dataset.type) { const k = t.dataset.type; if (S.types.has(k)) S.types.delete(k); else S.types.add(k); render(); return; }
+  if (t.dataset.evidence) { const k = t.dataset.evidence; if (S.evidence.has(k)) S.evidence.delete(k); else S.evidence.add(k); render(); return; }
+  if (t.dataset.inv) { S.inv.tab = t.dataset.inv; render(); return; }
+  if (t.dataset.sort) {
+    const cur = S.inv.sort[S.inv.tab];
+    S.inv.sort[S.inv.tab] = cur[0] === t.dataset.sort ? [cur[0], -cur[1]] : [t.dataset.sort, 1];
+    render();
+    const b = E.invWrap.querySelector(`[data-sort="${t.dataset.sort}"]`);
+    if (b) b.focus();
+    return;
+  }
+  if (t.dataset.node) { select(t.dataset.node); return; }
+  if (t.matches('tr.row')) { select(t.dataset.row); return; }
+  const act = t.dataset.act;
+  if (act === 'clear') { const id = S.selected; select(null); if (S.view === 'map' && id) { const b = E.nodes.querySelector(`[data-node="${CSS.escape(id)}"]`); if (b) b.focus(); } }
+  else if (act === 'focus') toggleFocus();
+  else if (act === 'inventory') { S.inv.tab = 'nodes'; setView('inventory'); }
+  else if (act === 'reset') resetMap();
+  else if (t === E.focusBtn) toggleFocus();
+  else if (t.id === 'zoom-in') zoomTo(curScale * 1.2);
+  else if (t.id === 'zoom-out') zoomTo(curScale / 1.2);
+  else if (t.id === 'zoom-fit') fitMap();
+  else if (t.id === 'reset-btn') resetMap();
+  else if (t === E.keysBtn) toggleKeys();
+});
+document.addEventListener('change', (ev) => {
+  const t = ev.target;
+  if (t === E.catSel) { S.cat = t.value; render(); return; }
+  if (t.dataset && t.dataset.invFilter) {
+    const key = { 'inv-kind': 'kind', 'inv-status': 'status', 'inv-cat': 'cat', 'inv-type': 'type', 'inv-evidence': 'evidence' }[t.dataset.invFilter];
+    S.inv[key] = t.value;
+    render();
+  }
+});
+document.addEventListener('input', (ev) => {
+  const t = ev.target;
+  if (t === E.q) { S.query = t.value; paint(); }
+  else if (t === E.invQ) { S.inv.q = t.value; renderInventory(); }
+  else if (t.id === 'src-q') { S.srcQ = t.value; $('#source-body').replaceChildren(...sourceRows()); }
+});
+E.q.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'Enter' || !LAY) return;
+  const q = S.query.trim().toLowerCase();
+  if (!q) return;
+  const first = LAY.items.filter((it) => it.n.mhay.includes(q)).sort((a, b) => ['L', 'C', 'R'].indexOf(a.col) - ['L', 'C', 'R'].indexOf(b.col) || a.y - b.y)[0];
+  if (!first) return;
+  ev.preventDefault();
+  select(first.id);
+  moveCursor(first.id);
+});
+E.nodes.addEventListener('keydown', (ev) => {
+  const b = ev.target.closest('.node');
+  if (!b || !LAY) return;
+  if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(ev.key)) return;
+  ev.preventDefault();
+  const it = LAY.byId.get(b.dataset.node);
+  const next = it && neighborItem(it, ev.key);
+  if (next) moveCursor(next.id);
+});
+E.nodes.addEventListener('mouseover', (ev) => {
+  const b = ev.target.closest('.node');
+  const id = b ? b.dataset.node : null;
+  if (id !== S.hover) { S.hover = id; paint(); }
+});
+E.nodes.addEventListener('mouseleave', () => { if (S.hover) { S.hover = null; paint(); } });
+E.nodes.addEventListener('focusin', (ev) => {
+  const b = ev.target.closest('.node');
+  if (!b) return;
+  cursorId = b.dataset.node;
+  for (const o of E.nodes.querySelectorAll('[tabindex="0"]')) if (o !== b) o.tabIndex = -1;
+  b.tabIndex = 0;
+  let visible = false;
+  try { visible = b.matches(':focus-visible'); } catch (e) { visible = false; }
+  if (visible) { S.hover = b.dataset.node; paint(); }
+});
+E.nodes.addEventListener('focusout', () => { if (S.hover) { S.hover = null; paint(); } });
+
+let drag = null;
+E.vp.addEventListener('pointerdown', (ev) => {
+  if (ev.pointerType !== 'mouse' || ev.button !== 0 || ev.target.closest('.node, .map-empty')) return;
+  drag = { x: ev.clientX, y: ev.clientY, sl: E.vp.scrollLeft, st: E.vp.scrollTop, moved: false, id: ev.pointerId };
+});
+E.vp.addEventListener('pointermove', (ev) => {
+  if (!drag || ev.pointerId !== drag.id) return;
+  const dx = ev.clientX - drag.x;
+  const dy = ev.clientY - drag.y;
+  if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 4) { drag.moved = true; E.vp.classList.add('is-panning'); try { E.vp.setPointerCapture(drag.id); } catch (e) { /* capture is optional */ } }
+  if (drag.moved) { E.vp.scrollLeft = drag.sl - dx; E.vp.scrollTop = drag.st - dy; }
+});
+const endDrag = (ev) => {
+  if (!drag) return;
+  const clicked = !drag.moved && ev.type === 'pointerup';
+  E.vp.classList.remove('is-panning');
+  drag = null;
+  if (clicked && S.selected && !S.focus) select(null);
+};
+E.vp.addEventListener('pointerup', endDrag);
+E.vp.addEventListener('pointercancel', endDrag);
+E.vp.addEventListener('wheel', (ev) => {
+  if (!ev.ctrlKey || !LAY) return;
+  ev.preventDefault();
+  const r = E.vp.getBoundingClientRect();
+  zoomTo(curScale * Math.exp(-ev.deltaY * 0.0018), ev.clientX - r.left, ev.clientY - r.top);
+}, { passive: false });
+
+$('.tabs').addEventListener('keydown', (ev) => {
+  if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+  const i = VIEWS.indexOf(S.view) + (ev.key === 'ArrowRight' ? 1 : -1);
+  const v = VIEWS[(i + VIEWS.length) % VIEWS.length];
+  setView(v);
+  document.getElementById('tab-' + v).focus();
+});
+$('.tabs2').addEventListener('keydown', (ev) => {
+  if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+  S.inv.tab = S.inv.tab === 'nodes' ? 'edges' : 'nodes';
+  render();
+  document.getElementById(S.inv.tab === 'nodes' ? 'inv-tab-nodes' : 'inv-tab-edges').focus();
+});
+document.addEventListener('focusin', (ev) => { const p = ev.target.closest && ev.target.closest('.pane'); if (p) setActivePane(p); });
+document.addEventListener('pointerdown', (ev) => { const p = ev.target.closest && ev.target.closest('.pane'); if (p) setActivePane(p); });
+document.addEventListener('keydown', (ev) => {
+  const typing = ev.target.matches && ev.target.matches('input, select, textarea');
+  if (ev.key === 'Escape') {
+    if (!E.keys.hidden) { toggleKeys(false); E.keysBtn.focus(); return; }
+    if (typing) { if (ev.target.value) { ev.target.value = ''; ev.target.dispatchEvent(new Event('input', { bubbles: true })); } else ev.target.blur(); return; }
+    if (S.focus) { toggleFocus(); return; }
+    if (S.selected) { const id = S.selected; select(null); const b = S.view === 'map' && E.nodes.querySelector(`[data-node="${CSS.escape(id)}"]`); if (b) b.focus(); }
+    return;
+  }
+  if (typing || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  if (ev.key >= '1' && ev.key <= '4') { setView(VIEWS[Number(ev.key) - 1]); return; }
+  if (ev.key === '/') { ev.preventDefault(); focusSearch(); return; }
+  if (ev.key === '?') { toggleKeys(); return; }
+  if (S.view !== 'map') return;
+  if (ev.key === 'f' || ev.key === 'F') { if (S.selected) toggleFocus(); }
+  else if (ev.key === '+' || ev.key === '=') zoomTo(curScale * 1.2);
+  else if (ev.key === '-' || ev.key === '_') zoomTo(curScale / 1.2);
+  else if (ev.key === '0') fitMap();
+});
+window.addEventListener('popstate', () => { readHash(); render(); });
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { if (S.view === 'map' && S.scale == null) applyScale(); }).observe(E.vp);
+
+/* ---------- boot ---------- */
+E.barState.replaceChildren(D.empty
+  ? h('span', { class: 'state-draft', text: D.error ? 'Data error' : 'Unfinished shell, no research data' })
+  : `${D.meta.date || 'Undated'}, ${plural(D.nodes.length, 'node')}, ${plural(D.edges.length, 'relationship')}`);
+buildMapControls();
+if (D.empty) { $('#view-map .toolbar').hidden = true; E.legend.hidden = true; $('#view-inventory .toolbar').hidden = true; }
+readHash();
+render();
+setActivePane(document.getElementById('view-' + S.view));
+if (matchMedia('(max-width:760px)').matches && S.view === 'map' && !S.selected && LAY) requestAnimationFrame(() => { const center = LAY.items.find(i => i.col === 'C'); if (center) E.vp.scrollLeft = Math.max(0, center.x * curScale - (E.vp.clientWidth - center.w * curScale) / 2); });
+if (D.warn.length) console.warn('infra-data integrity:', D.warn);
+window.__infraMap = { state: S, data: D, layout: () => LAY, warnings: D.warn };
+})();
+</script>
+</body>
+</html>

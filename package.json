@@ -1,0 +1,20 @@
+{
+  "name": "topo",
+  "private": true,
+  "scripts": {
+    "design:build": "mkdir -p .cache && rustc --edition=2024 design/build.rs -o .cache/topo-design-build && .cache/topo-design-build",
+    "build": "mkdir -p .cache && rustc --edition=2024 tools/build.rs -o .cache/topo-build && .cache/topo-build",
+    "check": "bun run build && cargo test --locked -j 2 && tsc --noEmit && bun test design/catalog.test.ts && python3 -m unittest discover -s tests -p '*_test.py'"
+  },
+  "devDependencies": {
+    "@google/design.md": "0.4.0",
+    "@json-render/core": "0.21.0",
+    "playwright": "1.64.1",
+    "typescript": "5.9.3",
+    "wrangler": "4.149.0",
+    "zod": "4.3.6"
+  },
+  "dependencies": {
+    "@sentry/cloudflare": "11.8.0"
+  }
+}

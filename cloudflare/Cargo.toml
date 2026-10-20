@@ -1,0 +1,11 @@
+[package]
+name = "topo-cloudflare"
+version = "0.4.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+worker = "=0.8.7"

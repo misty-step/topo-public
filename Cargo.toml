@@ -1,0 +1,40 @@
+[package]
+name = "topo"
+version = "0.4.0"
+edition = "2024"
+default-run = "topo"
+publish = false
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+libc = "0.2"
+proc-macro2 = { version = "1", features = ["span-locations"] }
+syn = { version = "2", features = ["full", "visit"] }
+toml = "0.9"
+tree-sitter = "=0.27.1"
+tree-sitter-go = "=0.25.0"
+tree-sitter-javascript = "=0.25.0"
+tree-sitter-typescript = "=0.23.2"
+
+[dependencies.pulldown-cmark]
+version = "0.13"
+
+[workspace]
+members = ["cloudflare", "private-cloudflare"]
+default-members = ["."]
+resolver = "3"
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+
+# wasm-bindgen needs its exported table names; stripping the final WASM first
+# breaks catch-wrapper generation. Native CLI releases remain stripped.
+[profile.release.package.topo-cloudflare]
+strip = false
+
+[profile.release.package.topo-private-cloudflare]
+strip = false
