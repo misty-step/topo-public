@@ -5,7 +5,7 @@
       "dirty": false,
       "enumerated_files": 6,
       "errors": [],
-      "head": "2ea83d7f55fa238af6ae634215d861853fa8f972",
+      "head": "a94cbb41abb344c04d329b18216a1439bd64392b",
       "id": "collection:example/beacon",
       "label": "example/beacon",
       "limits": [
@@ -208,6 +208,6 @@
       "summary": "Declared in source/configuration; installed and runtime state were not probed."
     }
   ],
-  "revision": "5f31344cf0b02b41797fa453152b48fa4e0dd4d763dc784b8fc7fa2f31967170",
+  "revision": "ae37ae255cab6f17d6002124cf36d662adedfa5485dc784464f9aa0f7c3e9405",
   "scope": "repo:example/beacon"
 }

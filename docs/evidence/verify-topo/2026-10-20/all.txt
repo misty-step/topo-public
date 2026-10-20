@@ -3,10 +3,12 @@ PASS tool curl
 PASS tool jq
 PASS tool node
 PASS tool bun
-PASS playwright installed in ~/.t3/worktrees/topo-public/verify-verification-skill
-INFO checkout ebd181edbf44b0c13a2a77f1709292e844aa83ef on verify/verification-skill
+PASS tool cargo
+PASS tool python3
+PASS playwright installed in <checkout>
+INFO checkout 8355a09ef3dde0256acc480dc94266b09ed00d1d on verify/verification-skill
 PASS public /health ok, source 58a686e6dec655161f0d225b538d0f03f991dfce, native 0.4.0
-INFO deployed source 58a686e6dec655161f0d225b538d0f03f991dfce is not an ancestor of this checkout (unmerged or newer deploy)
+INFO deployed source 58a686e6dec655161f0d225b538d0f03f991dfce is not in this checkout's history (unmerged change, newer deploy, or a deployment built from another repository)
 SKIP private deployment (n/a: set TOPO_VERIFY_PRIVATE_SETTINGS to your settings JSON)
 INFO driving the source build of this checkout
 PASS cli version
@@ -21,7 +23,7 @@ PASS cli query-entity
 PASS cli query returns app.ts -> client.ts
 PASS cli query-revision
 PASS cli render
-PASS cli render keeps revision 5f31344cf0b02b41797fa453152b48fa4e0dd4d763dc784b8fc7fa2f31967170
+PASS cli render keeps revision ae37ae255cab6f17d6002124cf36d662adedfa5485dc784464f9aa0f7c3e9405
 PASS cli state
 PASS cli state wrote projects.md and projects.json
 PASS cli existing-output refused (exit 1): topo: Output already exists; use a fresh run directory
@@ -111,6 +113,6 @@ PASS site-phone-light: no page errors
 PASS site-phone-dark: home heading
 PASS site-phone-dark: demo embed present
 PASS site-phone-dark: no page errors
-PASS site-slow-network: demo usable on throttled phone - 1298 ms
+PASS site-slow-network: demo usable on throttled phone - 1270 ms
 SKIP sign-in (n/a: set TOPO_VERIFY_PRIVATE_SETTINGS and TOPO_VERIFY_OWNER_EMAIL)
-evidence: ~/.cache/tmp/verify-topo/pub2/evidence
+evidence: <runs>/pub3/evidence

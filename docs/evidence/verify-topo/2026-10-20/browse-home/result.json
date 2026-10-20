@@ -1,7 +1,7 @@
 {
   "mode": "home",
-  "target": "~/.cache/tmp/verify-topo/pub2/home/index.html",
-  "startedAt": "2026-10-20T22:14:47.478Z",
+  "target": "<runs>/pub3/home/index.html",
+  "startedAt": "2026-10-20T22:29:04.861Z",
   "checks": [
     {
       "name": "home-desktop: title is Topo",
@@ -64,6 +64,6 @@
       "detail": ""
     }
   ],
-  "finishedAt": "2026-10-20T22:14:49.247Z",
+  "finishedAt": "2026-10-20T22:29:10.641Z",
   "ok": true
 }

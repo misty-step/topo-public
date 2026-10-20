@@ -2,6 +2,6 @@
   "archive": 0,
   "focus": 0,
   "maintain": 1,
-  "output": "~/.cache/tmp/verify-topo/pub2-installed/state-out",
+  "output": "<runs>/pub3-installed/state-out",
   "repositories": 1
 }
