@@ -31,9 +31,11 @@ its own run directory, browser context and fixture.
 2. Pick a run directory: `export TOPO_VERIFY_RUN=~/.cache/tmp/verify-topo/$(date -u +%Y%m%dT%H%M%SZ)`.
    The default is `~/.cache/tmp/verify-topo/default`. Two concurrent runs must use
    different directories. The helper marks a run directory with
-   `.verify-topo-run`, and refuses a directory that is non-empty and unmarked,
-   your home, or the checkout or anything containing it, because cleanup
-   empties the run directory. Nothing else is shared between runs except the owner
+   `.verify-topo-run`. It refuses a directory that is non-empty and unmarked.
+   It also refuses your home, the runs root `~/.cache/tmp/verify-topo`, the
+   checkout, and anything containing the checkout or the owner profile,
+   because cleanup empties the run directory. A symlinked run directory is
+   resolved to its target. Nothing else is shared between runs except the owner
    browser profile (see sign-in).
 3. Ready means `.agents/skills/verify-topo/verify-topo doctor` prints no `FAIL`.
 
@@ -70,10 +72,11 @@ Doctor is read-only. Without `--live` it checks:
 `--live` adds the owner-identity configuration:
 
 - the Access application for the private host has the audience `vars.ACCESS_AUD`;
-- its allow rules are exactly `TOPO_VERIFY_ALLOWED_EMAILS` (default 1)
-  exact-email rules, including `TOPO_VERIFY_OWNER_EMAIL`. It fails on any
-  everyone, domain or group rule, on a non-service-token non-identity rule,
-  and on any bypass policy;
+- its allow rules admit exactly the address set in `TOPO_VERIFY_ALLOWED_EMAILS`.
+  That is a comma-separated list of addresses or sha256 digests of their
+  lowercase form; the default is the owner only. It fails on any everyone,
+  domain or group rule, on any `require` or `exclude` condition, on a
+  non-service-token non-identity rule, and on any bypass policy;
 - it allows exactly one login method, named `TOPO_VERIFY_OWNER_IDP` when that
   is set. An empty list, which admits every method, fails;
 - the most recent owner login to that host in the Access log.
@@ -100,11 +103,12 @@ before claiming coverage. A proof covers only the entry points that were driven.
 
 ## Evidence
 
-Everything goes to `$TOPO_VERIFY_RUN/evidence/`:
+Public journeys write to `$TOPO_VERIFY_RUN/evidence/`. Sign-in writes to
+`$TOPO_VERIFY_RUN/private-evidence/` instead:
 
 - `cli/transcript.txt`: every command, its exit code, the head of stdout, and
   stderr. Full `cli/<step>.stdout` and `.stderr` sit beside it.
-- `browse/`, `browse-home/`, `site/`, `sign-in/`, `sign-in/owner/`: each has a
+- `browse/`, `browse-home/`, `site/`, and `private-evidence/sign-in/` with `owner/`: each has a
   `result.json` (every check with pass/fail and detail), PNG screenshots per
   device and colour scheme, and `*.aria.txt` accessibility snapshots.
 
@@ -117,14 +121,19 @@ Proof standards:
 - Check side effects, such as files written (`index.html`, `graph.json`,
   `manifest.json`), revisions kept across `render`, and ignored `.env` bytes
   absent from outputs.
-- Failure states must fail loudly. Every refusal step asserts a non-zero exit
-  and records the message.
+- Failure states must fail loudly. Every refusal step asserts exit 1 and its
+  message.
 - Owner proof is the Access identity of the browser session plus the owner-only
   page. An HTTP 200 for a service token, a redirect, or a sent email is not owner
   proof.
 - Private maps are personal content. The owner drive records only identity,
   manifest schema, timestamps and counts. Never screenshot or commit private map
   pages. Committed evidence goes under `docs/evidence/verify-topo/<date>/`.
+- This repository is public. Commit only `evidence/` from runs without
+  private settings. Never commit `private-evidence/` or `doctor --live`
+  output, because they name the operator's private host and owner. Replace
+  absolute home paths with `~` before committing, and keep operator proof in
+  the operator's own private records.
 
 ## Cleanup
 
@@ -138,7 +147,9 @@ scratch files in `$TOPO_VERIFY_RUN`. It never removes `evidence/`. Every
 browser the helper starts closes when its drive ends. No server is started, so
 there is nothing to kill. The owner profile at
 `~/.cache/tmp/verify-topo/owner-profile` holds an Access session for the
-application's session duration. Keep it to re-prove within that window. Remove it with `--profile` when done.
+application's session duration. Keep it to re-prove within that window. Set `TOPO_VERIFY_OWNER_PROFILE` to use another
+profile directory. `cleanup --profile` removes only a directory under
+`~/.cache/tmp/verify-topo` or one named `*profile*`. Remove it with `--profile` when done.
 
 ## Limits
 
@@ -150,5 +161,6 @@ application's session duration. Keep it to re-prove within that window. Remove i
 - [`tests/demo-browser.mjs`](../../../tests/demo-browser.mjs) is the exhaustive
   demo sweep: all 43 inspectors, fullscreen, both palettes. Run it with
   `bun tests/demo-browser.mjs https://topo.mistystep.io $TOPO_VERIFY_RUN/evidence/demo-browser`
-  when the demo or viewer changes. No workflow runs it, and its `changelog
-  system palette` assertion can race the page load.
+  when the demo or viewer changes. CI's full proof also runs it against the
+  bundled Worker. Against a live site, its `changelog system palette`
+  assertion can race the page load.

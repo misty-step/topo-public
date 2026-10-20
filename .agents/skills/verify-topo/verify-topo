@@ -17,28 +17,40 @@
 #   TOPO_VERIFY_OWNER_EMAIL the private deployment's owner identity; required for private checks and sign-in
 #   TOPO_VERIFY_OWNER_IDP  name of the only login method the private host may allow (unset: list them, require one)
 #   TOPO_VERIFY_OWNER_IDP_TYPE  identity-provider type the owner session must use, e.g. oidc or onetimepin (optional)
-#   TOPO_VERIFY_ALLOWED_EMAILS  exact number of email rules the allow policy may hold (default 1: the owner)
+#   TOPO_VERIFY_ALLOWED_EMAILS  comma-separated exact set the allow policy must admit; each entry is an address or the
+#                          sha256 of its lowercase form (default: the owner only)
+#   TOPO_VERIFY_OWNER_PROFILE  owner browser profile (default ~/.cache/tmp/verify-topo/owner-profile)
 #   CLOUDFLARE_API_TOKEN, TOPO_MAPS_ACCESS_CREDENTIAL  only for doctor --live (inject from your secret manager)
 set -uo pipefail
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 repo=$(cd "$here/../../.." && pwd)
-run=${TOPO_VERIFY_RUN:-$HOME/.cache/tmp/verify-topo/default}
+# sha256 of an address's lowercase form; portable to macOS (shasum) and bash 3.2.
+digest() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | { sha256sum 2>/dev/null || shasum -a 256; } | cut -c1-64; }
+resolve() { python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"; }
+runs_root=$(resolve "$HOME/.cache/tmp/verify-topo")
+# Resolved, so a symlinked run directory is cleaned through its target.
+run=$(resolve "${TOPO_VERIFY_RUN:-$runs_root/default}")
 evidence=$run/evidence
 public=${TOPO_VERIFY_PUBLIC:-https://topo.mistystep.io}
 settings=${TOPO_VERIFY_PRIVATE_SETTINGS:-}
 private='' account='' team='' audience=''
 if [[ -n $settings ]]; then
   [[ -r $settings ]] || { printf 'FAIL TOPO_VERIFY_PRIVATE_SETTINGS is not readable: %s\n' "$settings"; exit 64; }
-  private=https://$(jq -r '.vars.PRIVATE_HOST // empty' "$settings")
+  private=$(jq -r '.vars.PRIVATE_HOST // empty' "$settings")
+  [[ -n $private ]] || { printf 'FAIL TOPO_VERIFY_PRIVATE_SETTINGS is not settings JSON with vars.PRIVATE_HOST: %s\n' "$settings"; exit 64; }
+  private=https://$private
   account=$(jq -r '.account_id // empty' "$settings")
   team=$(jq -r '.vars.ACCESS_TEAM_DOMAIN // empty' "$settings")
   audience=$(jq -r '.vars.ACCESS_AUD // empty' "$settings")
+  [[ $team == https://*.cloudflareaccess.com ]] || { printf 'FAIL TOPO_VERIFY_PRIVATE_SETTINGS vars.ACCESS_TEAM_DOMAIN is not https://<team>.cloudflareaccess.com: %s\n' "$settings"; exit 64; }
 fi
 owner=${TOPO_VERIFY_OWNER_EMAIL:-}
 owner_idp=${TOPO_VERIFY_OWNER_IDP:-}
-allowed_emails=${TOPO_VERIFY_ALLOWED_EMAILS:-1}
-export TOPO_VERIFY_REPO=$repo TOPO_VERIFY_OWNER_EMAIL=$owner
+allowed_emails=${TOPO_VERIFY_ALLOWED_EMAILS:-$owner}
+profile=$(resolve "${TOPO_VERIFY_OWNER_PROFILE:-$runs_root/owner-profile}")
+export TOPO_VERIFY_OWNER_PROFILE=$profile
+export TOPO_VERIFY_REPO=$repo TOPO_VERIFY_OWNER_EMAIL=$owner TOPO_VERIFY_ACCESS_TEAM=$team
 failures=0
 
 say() { printf '%s\n' "$*"; }
@@ -50,12 +62,17 @@ browser() { (cd "$repo" && node "$here/browser.mjs" "$@"); }
 cf_get() { curl -fsS -H @<(printf 'Authorization: Bearer %s\n' "$CLOUDFLARE_API_TOKEN") "https://api.cloudflare.com/client/v4/accounts/$account/$1"; }
 
 # Refuse to treat an arbitrary directory as a run: cleanup deletes everything in it except evidence/.
-claim_run() {
-  local real; real=$(realpath -m "$run")
-  case $real in
-    /|"$HOME"|"$(realpath -m "$repo")"|"$(realpath -m "$repo")"/*) say "FAIL refusing TOPO_VERIFY_RUN=$run: not a scratch directory"; exit 64 ;;
+guard_run() {
+  local repo_real; repo_real=$(resolve "$repo")
+  case $run in
+    /|"$(resolve "$HOME")"|"$runs_root"|"$repo_real"|"$repo_real"/*) say "FAIL refusing TOPO_VERIFY_RUN=$run: not a scratch run directory"; exit 64 ;;
   esac
-  [[ $(realpath -m "$repo")/ == "$real"/* ]] && { say "FAIL refusing TOPO_VERIFY_RUN=$run: it contains this checkout"; exit 64; }
+  [[ $repo_real/ == "$run"/* ]] && { say "FAIL refusing TOPO_VERIFY_RUN=$run: it contains this checkout"; exit 64; }
+  [[ $profile == "$run" || $profile/ == "$run"/* ]] && { say "FAIL refusing TOPO_VERIFY_RUN=$run: it contains the owner profile"; exit 64; }
+  return 0
+}
+claim_run() {
+  guard_run
   if [[ -d $run && ! -e $run/.verify-topo-run && -n $(ls -A "$run") ]]; then
     say "FAIL refusing TOPO_VERIFY_RUN=$run: non-empty and not a verify-topo run (no .verify-topo-run)"; exit 64
   fi
@@ -68,7 +85,7 @@ cmd_setup() {
 
 cmd_doctor() {
   local live=false; [[ ${1:-} == --live ]] && live=true
-  for tool in git curl jq node bun; do
+  for tool in git curl jq node bun cargo python3; do
     command -v "$tool" >/dev/null && pass "tool $tool" || fail "tool $tool missing"
   done
   [[ -d $repo/node_modules/playwright ]] && pass "playwright installed in $repo" || fail "playwright missing: run verify-topo setup"
@@ -79,11 +96,11 @@ cmd_doctor() {
   hs=$(jq -r .source <<<"$health"); ms=$(jq -r .source_revision <<<"$manifest")
   [[ $(jq -r .status <<<"$health") == ok && $hs == "$ms" ]] && pass "public /health ok, source $hs, native $(jq -r .native_version <<<"$manifest")" || fail "public /health ($hs) disagrees with manifest ($ms)"
   if git -C "$repo" merge-base --is-ancestor "$hs" HEAD 2>/dev/null; then pass "deployed source $hs is in this checkout's history"
-  else say "INFO deployed source $hs is not an ancestor of this checkout (unmerged or newer deploy)"; fi
+  else say "INFO deployed source $hs is not in this checkout's history (unmerged change, newer deploy, or a deployment built from another repository)"; fi
   if [[ -z $private ]]; then skip "private deployment (n/a: set TOPO_VERIFY_PRIVATE_SETTINGS to your settings JSON)"; return; fi
   local loc
   loc=$(curl -s -o /dev/null -w '%{redirect_url}' "$private/")
-  [[ -n $team && $loc == "$team"/* ]] && pass "private host sends anonymous visitors to its Access team" || fail "private host did not redirect to ACCESS_TEAM_DOMAIN: ${loc:-no redirect}"
+  [[ -n $team && $loc == "$team"/cdn-cgi/access/login/* ]] && pass "private host sends anonymous visitors to its Access team" || fail "private host did not redirect to ACCESS_TEAM_DOMAIN: ${loc:-no redirect}"
   if ! $live; then skip "owner identity and private bundle (run: doctor --live with credentials injected)"; return; fi
   [[ -n $owner ]] || fail "TOPO_VERIFY_OWNER_EMAIL not set"
   if [[ -z ${CLOUDFLARE_API_TOKEN:-} ]]; then fail "CLOUDFLARE_API_TOKEN not injected"; else
@@ -92,15 +109,19 @@ cmd_doctor() {
     app=$(jq -c --arg d "${private#https://}" '[.result[]? | select(.domain == $d)][0] // {}' <<<"$apps")
     [[ -n $audience && $(jq -r '.aud // empty' <<<"$app") == "$audience" ]] \
       && pass "Access app audience matches ACCESS_AUD in the settings" || fail "Access app for ${private#https://} missing or audience differs from ACCESS_AUD"
-    # Exactly who may get in: allow rules are exact emails (no everyone, domain or group), owner included, expected count;
-    # non-identity rules are service tokens only; no bypass policies.
-    local rules
+    # Exactly who may get in: allow rules are exact emails equal to the expected set (compared as sha256 digests),
+    # with no require/exclude that could lock the owner out; non-identity rules are service tokens only; no bypass.
+    local rules expected actual
     rules=$(jq -c '{allow: [.policies[]? | select(.decision == "allow") | .include[]?],
+      conditions: [.policies[]? | select(.decision == "allow") | (.require // []) + (.exclude // []) | .[]],
       other: [.policies[]? | select(.decision == "non_identity") | .include[]? | select(has("service_token") | not)],
       bypass: [.policies[]? | select(.decision == "bypass")]}' <<<"$app")
-    jq -e --arg e "$owner" --argjson n "$allowed_emails" '(.allow | length) == $n and all(.allow[]; has("email")) and ([.allow[].email.email] | index($e)) and (.other | length) == 0 and (.bypass | length) == 0' <<<"$rules" >/dev/null \
-      && pass "Access admits only $allowed_emails exact email rules including owner $owner, plus service tokens" \
-      || fail "Access policy is not exactly the owner's email rules: $(jq -c '{allow_rules: [.allow[] | keys[0]], allow_count: (.allow | length), non_token_rules: (.other | length), bypass: (.bypass | length)}' <<<"$rules")"
+    expected=$(tr ',' '\n' <<<"$allowed_emails" | while read -r e; do [[ -z $e ]] && continue
+      if [[ $e =~ ^[0-9a-f]{64}$ ]]; then echo "$e"; else digest "$e"; fi; done | sort -u)
+    actual=$(jq -r '.allow[] | .email.email // "NOT-AN-EMAIL-RULE"' <<<"$rules" | while read -r e; do digest "$e"; done | sort -u)
+    if [[ -n $expected && $actual == "$expected" ]] && jq -e 'all(.allow[]; has("email")) and (.conditions | length) == 0 and (.other | length) == 0 and (.bypass | length) == 0' <<<"$rules" >/dev/null; then
+      pass "Access admits exactly the $(wc -l <<<"$expected") expected email addresses (owner $owner), no require/exclude, plus service tokens only"
+    else fail "Access policy is not exactly the expected addresses: $(jq -c --argjson want "$(wc -l <<<"$expected")" '{allow_rules: [.allow[] | keys[0]], allow_count: (.allow | length), expected_count: $want, require_or_exclude: (.conditions | length), non_token_rules: (.other | length), bypass: (.bypass | length)}' <<<"$rules"), set match: $([[ $actual == "$expected" ]] && echo yes || echo no), owner admitted: $(grep -qx "$(digest "$owner")" <<<"$actual" && echo yes || echo no)"; fi
     idps=$(cf_get access/identity_providers) || idps='{}'
     local allowed
     allowed=$(jq -r --argjson ids "$(jq -c '.allowed_idps // []' <<<"$app")" '[.result[]? | select(.id as $i | $ids | index($i)) | "\(.name) (\(.type))"] | join(", ")' <<<"$idps")
@@ -109,7 +130,7 @@ cmd_doctor() {
     else pass "only login method: $allowed"; fi
     local last
     last=$(cf_get "access/logs/access_requests?limit=1000&direction=desc&email=$owner" \
-      | jq -r --arg d "${private#https://}" '[.result[]? | select(.app_domain == $d)][0] | if . then "\(.created_at) allowed=\(.allowed) via \(.connection)" else "none in retained log" end')
+      | jq -r --arg d "${private#https://}" '[.result[]? | select(.app_domain == $d)][0] | if . then "\(.created_at) allowed=\(.allowed) via \(.connection)" else "none among the most recent owner entries returned (up to 50)" end')
     say "INFO last owner login to ${private#https://}: $last (passive signal only; not agent proof)"
   fi
   if [[ -z ${TOPO_MAPS_ACCESS_CREDENTIAL:-} ]]; then fail "TOPO_MAPS_ACCESS_CREDENTIAL not injected"; else
@@ -177,8 +198,10 @@ cmd_cli() {
   step run 0 '"coverage": "partial"' -- "$topo" run --repo example/beacon="$run/fixture" --out "$run/map"
   [[ -f $run/map/index.html && -f $run/map/graph.json && -f $run/map/manifest.json ]] && pass "cli run wrote index.html, graph.json, manifest.json" || fail "cli run output files missing"
   jq -e '.entities | has("package:npm:react") and has("package:rust:serde")' "$run/map/graph.json" >/dev/null && pass "cli run found the react and serde declarations" || fail "cli run missed package:npm:react or package:rust:serde"
-  grep -q 'ghost' "$run/map/graph.json" && fail "commented import created an entity" || pass "cli commented import ignored"
-  grep -q 'fixture-not-a-secret' "$run/map/graph.json" "$run/map/index.html" && fail "ignored .env content leaked into the map" || pass "cli ignored .env stays out of the map"
+  if [[ -f $run/map/graph.json && -f $run/map/index.html ]]; then
+    grep -q 'ghost' "$run/map/graph.json" && fail "commented import created an entity" || pass "cli commented import ignored"
+    grep -q 'fixture-not-a-secret' "$run/map/graph.json" "$run/map/index.html" && fail "ignored .env content leaked into the map" || pass "cli ignored .env stays out of the map"
+  else fail "cli import and .env checks need map/graph.json and map/index.html"; fi
   step scopes 0 '' -- "$topo" scopes --graph "$run/map/graph.json"
   jq -e 'has("repo:example/beacon") and has("module:example/beacon:web/src")' "$evidence/cli/scopes.stdout" >/dev/null && pass "cli scopes lists repo and module scopes" || fail "cli scopes missing expected IDs"
   step query-entity 0 '' -- "$topo" query --graph "$run/map/graph.json" --entity file:example/beacon:web/src/app.ts --direction dependencies
@@ -223,16 +246,26 @@ cmd_site() {
 
 cmd_sign_in() {
   if [[ -z $private || -z $owner ]]; then skip "sign-in (n/a: set TOPO_VERIFY_PRIVATE_SETTINGS and TOPO_VERIFY_OWNER_EMAIL)"; return; fi
-  browser gate "$private/" "$evidence/sign-in" || fail "signed-out gate (see $evidence/sign-in/result.json)"
-  browser owner "$private/" "$evidence/sign-in/owner" "$@"; local code=$?
-  if [[ $code == 2 ]]; then say "UNPROVEN owner sign-in: $(jq -r .unproven "$evidence/sign-in/owner/result.json")"; failures=$((failures + 1))
-  elif [[ $code != 0 ]]; then fail "owner sign-in (see $evidence/sign-in/owner/result.json)"; fi
+  # Private-deployment proof names the operator's host and owner: keep it out of evidence/, which may be committed here.
+  local private_evidence=$run/private-evidence/sign-in
+  browser gate "$private/" "$private_evidence" || fail "signed-out gate (see $private_evidence/result.json)"
+  browser owner "$private/" "$private_evidence/owner" "$@"; local code=$?
+  if [[ $code == 2 ]]; then say "UNPROVEN owner sign-in: $(jq -r .unproven "$private_evidence/owner/result.json")"; failures=$((failures + 1))
+  elif [[ $code != 0 ]]; then fail "owner sign-in (see $private_evidence/owner/result.json)"; fi
 }
 
 cmd_cleanup() {
+  guard_run
   [[ -e $run/.verify-topo-run ]] || { say "nothing to clean at $run (no .verify-topo-run marker)"; return; }
   find "$run" -mindepth 1 -maxdepth 1 ! -name evidence ! -name .verify-topo-run -exec rm -rf {} +
-  [[ ${1:-} == --profile ]] && rm -rf "${TOPO_VERIFY_OWNER_PROFILE:-$HOME/.cache/tmp/verify-topo/owner-profile}"
+  if [[ ${1:-} == --profile && -d $profile ]]; then
+    # Only a browser profile directory: under the runs root or named *profile*, never home, root, repo or runs root.
+    case $profile in
+      /|"$(resolve "$HOME")"|"$runs_root"|"$(resolve "$repo")"*) say "FAIL refusing to remove owner profile $profile"; exit 64 ;;
+    esac
+    if [[ $profile == "$runs_root"/* || $(basename "$profile") == *profile* ]]; then rm -rf "$profile"; say "removed owner profile $profile"
+    else say "FAIL refusing to remove $profile: not under $runs_root and not named *profile*"; exit 64; fi
+  fi
   say "cleaned $run; evidence kept at $evidence"
 }
 
@@ -256,7 +289,9 @@ case $command in
         *) say "unknown option for all: $1"; exit 64 ;;
       esac; shift
     done
-    cmd_doctor "${doctor_args[@]}"; cmd_cli "${cli_args[@]}"; cmd_browse; cmd_site; cmd_sign_in "${sign_in_args[@]}" ;;
+    # ${a[@]+"${a[@]}"} keeps empty arrays safe under set -u on bash 3.2 (macOS).
+    cmd_doctor ${doctor_args[@]+"${doctor_args[@]}"}; cmd_cli ${cli_args[@]+"${cli_args[@]}"}; cmd_browse; cmd_site
+    cmd_sign_in ${sign_in_args[@]+"${sign_in_args[@]}"} ;;
   cleanup) cmd_cleanup "$@" ;;
   *) sed -n '2,/^set -uo/p' "$0" | sed '$d'; exit 64 ;;
 esac

@@ -76,11 +76,11 @@ async function driveMap(browser) {
         const search = page.getByRole('searchbox', { name: 'Search nodes' });
         const counted = async () => (await page.locator('#map-q-count').innerText().catch(() => '')).trim();
         await search.fill(process.env.TOPO_VERIFY_SEARCH || 'npm');
-        await page.waitForFunction(() => /\d+ match/.test(document.querySelector('#map-q-count')?.textContent || ''));
+        await page.waitForFunction(() => /\d+ match/.test(document.querySelector('#map-q-count')?.textContent || ''), null, { timeout: 5000 }).catch(() => {});
         const hit = await counted();
         check(`${name}: search finds matching nodes`, /^[1-9]\d* match(es)?$/.test(hit), hit);
         await search.fill('verify-topo-no-such-node');
-        await page.waitForFunction(() => /^0 matches$/.test((document.querySelector('#map-q-count')?.textContent || '').trim()));
+        await page.waitForFunction(() => /^0 matches$/.test((document.querySelector('#map-q-count')?.textContent || '').trim()), null, { timeout: 5000 }).catch(() => {});
         const miss = await counted();
         check(`${name}: search reports zero matches for an absent node`, miss === '0 matches', miss);
         await search.fill('');
@@ -231,15 +231,23 @@ async function driveGate(browser) {
   check('gate: no private home content is shown', !(await page.getByRole('link', { name: /^Projects \d+/ }).count()));
   const signInHost = process.env.TOPO_VERIFY_SIGN_IN_HOST;
   if (signInHost) check('gate: lands on the configured sign-in host', landed.hostname === signInHost, landed.hostname);
-  check('gate: page offers a sign-in form or identity choice', await page.getByRole('textbox').count() > 0
-    || await page.getByRole('button').count() > 0);
   await shot(page, 'gate-signed-out');
   await aria(page, 'gate-signed-out');
   // Wrong identity: a forged Access cookie must not reach assets.
+  // Access refuses with a redirect to the team's login path, or 401/403. A 200, 5xx or other redirect is not a refusal.
+  const team = process.env.TOPO_VERIFY_ACCESS_TEAM;
+  const refused = r => {
+    const location = r.headers.get('location') || '';
+    return [401, 403].includes(r.status) || (r.status >= 300 && r.status < 400 && Boolean(team)
+      && location.startsWith(`${team}/cdn-cgi/access/login/`));
+  };
+  const anonymous = await fetch(target, { redirect: 'manual' });
+  check('gate: anonymous request is redirected to the Access team login', refused(anonymous),
+    `${anonymous.status} ${new URL(anonymous.headers.get('location') || 'about:blank').origin}`);
   const forged = await fetch(target, { redirect: 'manual', headers: { cookie: 'CF_Authorization=forged.verify-topo.token' } });
-  check('gate: forged session cookie is refused', forged.status !== 200, String(forged.status));
+  check('gate: forged session cookie is refused by Access', refused(forged), String(forged.status));
   const wrongToken = await fetch(target, { redirect: 'manual', headers: { 'CF-Access-Client-Id': 'verify-topo.access', 'CF-Access-Client-Secret': 'not-a-secret' } });
-  check('gate: unknown service token is refused', wrongToken.status !== 200, String(wrongToken.status));
+  check('gate: unknown service token is refused by Access', refused(wrongToken), String(wrongToken.status));
   await ctx.close();
 }
 

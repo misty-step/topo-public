@@ -34,7 +34,7 @@ Preconditions:
 - **Docs and changelog.** In light mode it clicks `Docs` (URL `/docs/`), opens `/docs/quickstart/` (article mentions `install.sh`), and clicks `Changelog` (article `h1` is `Changelog`).
 - **Demo.** It opens `/demo/`. On desktop it clicks button `docs.beacon.example. …`, and the inspector title must be `docs.beacon.example`. On a phone, button `Beacon API. …` must be visible.
 - **Slow network.** It throttles a phone context through CDP (400 ms latency, 50 KiB/s) and opens `/demo/`. `Beacon API` must become visible.
-- **Exhaustive demo.** When the viewer or demo changed, also run `bun tests/demo-browser.mjs https://topo.mistystep.io $TOPO_VERIFY_RUN/evidence/demo-browser` from the repository root. It sweeps every inspector, both palettes, and native and denied fullscreen. No workflow runs it. Its `changelog system palette` assertion can race the page load after the `Changelog` click; if only that assertion fails, check the palette directly before calling it a regression.
+- **Exhaustive demo.** When the viewer or demo changed, also run `bun tests/demo-browser.mjs https://topo.mistystep.io $TOPO_VERIFY_RUN/evidence/demo-browser` from the repository root. It sweeps every inspector, both palettes, and native and denied fullscreen. CI also runs it against the bundled Worker. Against a live site, its `changelog system palette` assertion can race the page load after the `Changelog` click; if only that assertion fails, check the palette directly before calling it a regression.
 - **Proof.** `evidence/site/result.json` (includes the health and manifest identities), `site-<device>-<scheme>-home.png`, the `-quickstart` and `-demo` screenshots, `site-desktop-light-demo.aria.txt`, and `site-slow-network-demo.png`.
 
 ## Gotchas
