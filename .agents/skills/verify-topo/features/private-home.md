@@ -10,7 +10,7 @@ disk.
 
 - `home-compose`: `topo-home --state DIR --maps DIR --out NEW_DIR` writes `index.html`, `catalogue.json`, `manifest.json`, `maps/` and `projects/`.
 - `home-open`: the catalogue titled `Topo` shows `Projects N` and Repos `Partial` coverage.
-- `home-projects`: `Projects` opens `projects/index.html`, and the `Topo` link returns home, from disk and when hosted.
+- `home-projects`: `Projects` opens `projects/index.html`. A project row's `Repo · partial source map` opens its map under `maps/`, and that page's `Topo home` link returns to the catalogue, from disk and when hosted.
 - `home-phone`: the catalogue renders at phone width without errors.
 - `home-deployed`: the deployed bundle is a `topo.home.v1` manifest with a generation time and source revision.
 
@@ -23,14 +23,14 @@ disk.
 
 Preconditions:
 
-- `verify-topo cli` ran in this `TOPO_VERIFY_RUN`, so `map/` and `state-out/` exist.
+- `.agents/skills/verify-topo/verify-topo cli` ran in this `TOPO_VERIFY_RUN`, so `map/` and `state-out/` exist.
 - `cargo` can build `topo-home` from this checkout.
 
-- **Compose.** Run `verify-topo browse`. After the map drive, it builds `target/debug/topo-home` and composes `$TOPO_VERIFY_RUN/home` from the fictional state and map. The step must print `Private catalogue composed`.
+- **Compose.** Run `.agents/skills/verify-topo/verify-topo browse`. After the map drive, it builds `target/debug/topo-home` and composes `$TOPO_VERIFY_RUN/home` from the fictional state and map. The step must print `Private catalogue composed`.
 - **Open.** On desktop and phone, it opens `home/index.html`. The title must be `Topo`, link `Projects 1` must be visible, and the main region must read `Partial`.
-- **Navigate.** On desktop it clicks `Projects 1`. The URL must end `projects/index.html`. Then it clicks link `Topo`, which must return to the home `index.html`.
-- **Deployed bundle.** With `TOPO_VERIFY_PRIVATE_SETTINGS` set, `verify-topo doctor --live` reads `/manifest.json` from the private host with the publishing service token. Expect schema `topo.home.v1`, `generated_at`, and `source_revision`. The owner drive in sign-in re-reads it inside the owner's session.
-- **Proof.** `evidence/browse-home/result.json`, `home-desktop.png`, `home-desktop-projects.png`, `home-phone.png`, and `home-desktop.aria.txt`.
+- **Navigate.** On desktop it clicks `Projects 1`. The URL must end `projects/index.html`. It then clicks the `example/beacon` row's `Repo · partial source map`. A `maps/scope-*.html` page must open with map nodes. Finally it clicks `Topo home`, which must return to the catalogue `index.html`.
+- **Deployed bundle.** With `TOPO_VERIFY_PRIVATE_SETTINGS` set, `.agents/skills/verify-topo/verify-topo doctor --live` reads `/manifest.json` from the private host with the publishing service token. Expect schema `topo.home.v1`, `generated_at`, and `source_revision`. The owner drive in sign-in re-reads it inside the owner's session.
+- **Proof.** `evidence/browse-home/result.json`, `home-desktop.png`, `home-desktop-projects.png`, `home-desktop-map.png`, `home-phone.png`, and `home-desktop.aria.txt`.
 
 ## Gotchas
 

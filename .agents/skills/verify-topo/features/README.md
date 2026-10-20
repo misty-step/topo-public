@@ -5,20 +5,20 @@ behaviour. Read this index before driving, then follow the matching feature file
 
 ## Baseline preconditions
 
-- `verify-topo setup` has run in this checkout.
+- `.agents/skills/verify-topo/verify-topo setup` has run in this checkout.
 - `TOPO_VERIFY_RUN` names a fresh directory for this run.
-- `verify-topo doctor` prints no `FAIL`. For sign-in work, `doctor --live` also
+- `.agents/skills/verify-topo/verify-topo doctor` prints no `FAIL`. For sign-in work, `doctor --live` also
   prints no `FAIL`.
 - The public site is https://topo.mistystep.io. A private deployment is
   described by `TOPO_VERIFY_PRIVATE_SETTINGS` (the settings JSON from
   `docs/deployment.md`), and its owner by `TOPO_VERIFY_OWNER_EMAIL`. Without
   them, the private checks report `SKIP` with that reason.
-- Write journeys use only the fictional `beacon` fixture that `verify-topo cli`
+- Write journeys use only the fictional `example/beacon` fixture that `.agents/skills/verify-topo/verify-topo cli`
   creates. Never run them against real repositories or private inventories.
 
 ## Driving conventions
 
-- Use `verify-topo <command>`. Each command drives its whole journey and records
+- Use `.agents/skills/verify-topo/verify-topo <command>` from the repository root. The helper is not on `PATH`. Each command drives its whole journey and records
   evidence. To drive a single step by hand, copy the command from the transcript.
 - Browser handles are accessible roles and names, such as tab `2 Inventory`,
   combobox `Map scope`, searchbox `Search nodes` and button `Fullscreen`. A

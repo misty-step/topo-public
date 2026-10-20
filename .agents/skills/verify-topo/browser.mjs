@@ -63,15 +63,27 @@ async function driveMap(browser) {
       const count = await nodes.count();
       check(`${name}: map renders nodes`, count > 0, `${count} nodes`);
       if (device === 'desktop') {
+        // The inspector starts on `Overview`; selecting must replace it with this node's label.
+        const before = await page.locator('#detail-head .d-title').innerText().catch(() => '');
+        const label = (await nodes.first().getAttribute('aria-label') || await nodes.first().innerText()).split('. ')[0];
         await nodes.first().click();
+        await page.waitForFunction(l => document.querySelector('#detail-head .d-title')?.textContent === l, label, { timeout: 5000 }).catch(() => {});
         const title = await page.locator('#detail-head .d-title').innerText().catch(() => '');
-        check(`${name}: selecting a node opens its inspector`, title.length > 0, title);
+        const selected = await page.locator('#detail').getAttribute('data-node');
+        check(`${name}: selecting a node opens its inspector`, title === label && title !== before && Boolean(selected), `${before} -> ${title} (${selected})`);
         const body = await page.locator('#detail-body').innerText();
         check(`${name}: inspector has no literal null/undefined fragments`, !/\b(?:null|undefined)\b/.test(body));
-        await page.getByRole('searchbox', { name: 'Search nodes' }).fill(process.env.TOPO_VERIFY_SEARCH || 'npm');
-        check(`${name}: search narrows the map`, await page.locator('#map-q-count').innerText().then(t => t.length > 0).catch(() => false),
-          await page.locator('#map-q-count').innerText().catch(() => ''));
-        await page.getByRole('searchbox', { name: 'Search nodes' }).fill('');
+        const search = page.getByRole('searchbox', { name: 'Search nodes' });
+        const counted = async () => (await page.locator('#map-q-count').innerText().catch(() => '')).trim();
+        await search.fill(process.env.TOPO_VERIFY_SEARCH || 'npm');
+        await page.waitForFunction(() => /\d+ match/.test(document.querySelector('#map-q-count')?.textContent || ''));
+        const hit = await counted();
+        check(`${name}: search finds matching nodes`, /^[1-9]\d* match(es)?$/.test(hit), hit);
+        await search.fill('verify-topo-no-such-node');
+        await page.waitForFunction(() => /^0 matches$/.test((document.querySelector('#map-q-count')?.textContent || '').trim()));
+        const miss = await counted();
+        check(`${name}: search reports zero matches for an absent node`, miss === '0 matches', miss);
+        await search.fill('');
         await page.getByRole('tab', { name: '2 Inventory' }).click();
         const rows = await page.getByRole('tabpanel', { name: 'Inventory table' }).getByRole('row').count();
         check(`${name}: Inventory view lists the nodes`, rows > 1, `${rows - 1} rows`);
@@ -83,10 +95,18 @@ async function driveMap(browser) {
         const picked = await page.getByRole('combobox', { name: 'Map scope' }).locator('option:checked').innerText();
         check(`${name}: choosing a scope opens its sibling page`, picked === repoScope, `${path.basename(new URL(page.url()).pathname)} shows ${picked}`);
         await page.goto(url);
-        const fullscreen = page.getByRole('button', { name: 'Fullscreen' }).first();
-        await fullscreen.click();
+        await page.getByRole('button', { name: 'Fullscreen' }).first().click();
+        const exit = page.getByRole('button', { name: 'Exit fullscreen' });
+        const expanded = await exit.waitFor({ timeout: 5000 }).then(() => exit.getAttribute('aria-pressed')).catch(() => null);
+        check(`${name}: Fullscreen expands (control becomes Exit fullscreen, pressed)`, expanded === 'true', String(expanded));
+        // Let the browser finish entering fullscreen (native, or the in-page fallback) before Escape.
+        await page.waitForFunction(() => document.fullscreenElement || document.querySelector('[data-fullscreen-active], .is-fullscreen'), null, { timeout: 5000 }).catch(() => {});
+        await page.waitForTimeout(300);
         await page.keyboard.press('Escape');
-        check(`${name}: Fullscreen toggles and Escape returns`, await page.getByRole('tablist', { name: 'Views' }).isVisible());
+        const restored = page.getByRole('button', { name: 'Fullscreen', exact: true }).first();
+        const back = await restored.waitFor({ timeout: 5000 }).then(() => restored.getAttribute('aria-pressed')).catch(() => null);
+        check(`${name}: Escape leaves fullscreen and keeps the map`, back === 'false'
+          && await page.getByRole('tablist', { name: 'Views' }).isVisible(), String(back));
       }
       await shot(page, name);
       if (device === 'desktop' && scheme === 'light') await aria(page, name);
@@ -117,9 +137,17 @@ async function driveHome(browser) {
       await page.waitForLoadState('load');
       check(`${name}: Projects page opens from disk`, /projects\/index\.html$/.test(page.url()), path.basename(path.dirname(page.url())));
       await shot(page, `${name}-projects`);
-      await page.getByRole('link', { name: 'Topo' }).first().click();
-      await page.waitForLoadState('load');
-      check(`${name}: Topo link returns home`, /\/index\.html$/.test(page.url()) && !/projects/.test(page.url()));
+      const sourceMap = page.getByRole('link', { name: 'Repo · partial source map' });
+      check(`${name}: project row links to its source map`, await sourceMap.count() === 1);
+      if (await sourceMap.count() === 1) {
+        await Promise.all([page.waitForURL(/\/maps\/scope-[0-9a-f]+\.html/), sourceMap.click()]);
+        check(`${name}: source map opens from the project row`, await page.getByRole('group', { name: 'Infrastructure map' }).getByRole('button').count() > 0,
+          path.basename(new URL(page.url()).pathname));
+        await shot(page, `${name}-map`);
+      }
+      await Promise.all([page.waitForURL(u => /\/index\.html$/.test(u.pathname) && !/\/(maps|projects)\//.test(u.pathname)),
+        page.getByRole('link', { name: 'Topo home', exact: true }).click()]).catch(() => {});
+      check(`${name}: Topo home link returns to the catalogue`, /\/index\.html$/.test(page.url()) && !/\/(maps|projects)\//.test(page.url()), page.url().split('/').slice(-2).join('/'));
     }
     check(`${name}: no page errors`, errors.length === 0, errors.join('; '));
     await ctx.close();

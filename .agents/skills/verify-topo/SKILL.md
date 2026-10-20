@@ -25,18 +25,21 @@ from its own location. Browser drives use Playwright from this checkout's locked
 There is no long-lived server to start. The CLI is short-lived. Every drive uses
 its own run directory, browser context and fixture.
 
-1. Once per checkout, run `verify-topo setup`. It runs
+1. Once per checkout, run `.agents/skills/verify-topo/verify-topo setup`. It runs
    `bun install --frozen-lockfile` and `bunx --no-install playwright install chromium`.
    Set `CHROMIUM_EXECUTABLE` to use an already-installed Chromium instead.
 2. Pick a run directory: `export TOPO_VERIFY_RUN=~/.cache/tmp/verify-topo/$(date -u +%Y%m%dT%H%M%SZ)`.
    The default is `~/.cache/tmp/verify-topo/default`. Two concurrent runs must use
-   different directories. Nothing else is shared between runs except the owner
+   different directories. The helper marks a run directory with
+   `.verify-topo-run`, and refuses a directory that is non-empty and unmarked,
+   your home, or the checkout or anything containing it, because cleanup
+   empties the run directory. Nothing else is shared between runs except the owner
    browser profile (see sign-in).
-3. Ready means `verify-topo doctor` prints no `FAIL`.
+3. Ready means `.agents/skills/verify-topo/verify-topo doctor` prints no `FAIL`.
 
 The CLI journey installs the published executable from the public site into
 `$TOPO_VERIFY_RUN/bin` (`TOPO_INSTALL_DIR`, never `~/.local/bin`). To prove an
-unmerged change, use `verify-topo cli --source`. It drives `target/debug/topo`,
+unmerged change, use `cli --source`. It drives `target/debug/topo`,
 built with `cargo build --locked -j 2 --bin topo --bin topo-home`.
 `browse` always builds `topo-home` from this checkout, because the installer does
 not ship it.
@@ -67,9 +70,12 @@ Doctor is read-only. Without `--live` it checks:
 `--live` adds the owner-identity configuration:
 
 - the Access application for the private host has the audience `vars.ACCESS_AUD`;
-- its allow policy includes `TOPO_VERIFY_OWNER_EMAIL`;
-- its login methods are listed. Set `TOPO_VERIFY_OWNER_IDP_TYPE` (for example
-  `oidc` or `onetimepin`) to require the owner's method;
+- its allow rules are exactly `TOPO_VERIFY_ALLOWED_EMAILS` (default 1)
+  exact-email rules, including `TOPO_VERIFY_OWNER_EMAIL`. It fails on any
+  everyone, domain or group rule, on a non-service-token non-identity rule,
+  and on any bypass policy;
+- it allows exactly one login method, named `TOPO_VERIFY_OWNER_IDP` when that
+  is set. An empty list, which admits every method, fails;
 - the most recent owner login to that host in the Access log.
 
 It also reads the private manifest with the publishing service token. That proves
@@ -80,13 +86,14 @@ after any failed drive.
 
 | Command | Journey | Feature file |
 | --- | --- | --- |
-| `verify-topo cli [--source]` | install, collect, scopes, query, render, state, and every refusal | [cli](features/cli.md) |
-| `verify-topo browse` | exported map from disk (desktop/phone, light/dark, offline), composed home | [source-browser](features/source-browser.md), [private-home](features/private-home.md) |
-| `verify-topo site [BASE_URL]` | public site, docs, demo, changelog, health, 404, slow network | [public-site](features/public-site.md) |
-| `verify-topo sign-in [--headed] [--password-env NAME]` | signed-out gate, wrong identity, owner session, owner-only page | [sign-in](features/sign-in.md) |
-| `verify-topo all [--source]` | doctor, cli, browse, site, sign-in in order | all |
+| `cli [--source]` | install, collect, scopes, query, render, state, and every refusal | [cli](features/cli.md) |
+| `browse` | exported map from disk (desktop/phone, light/dark, offline), composed home | [source-browser](features/source-browser.md), [private-home](features/private-home.md) |
+| `site [BASE_URL]` | public site, docs, demo, changelog, health, 404, slow network | [public-site](features/public-site.md) |
+| `sign-in [--headed] [--password-env NAME]` | signed-out gate, wrong identity, owner session, owner-only page | [sign-in](features/sign-in.md) |
+| `all [--source] [--live] [--headed] [--password-env NAME]` | doctor, cli, browse, site, sign-in in order, each flag passed to its step | all |
 
-Each command prints one `PASS`, `FAIL`, `SKIP`, `INFO` or `UNPROVEN` line per
+Run each command as `.agents/skills/verify-topo/verify-topo <command>`.
+The helper is not on `PATH`. Each command prints one `PASS`, `FAIL`, `SKIP`, `INFO` or `UNPROVEN` line per
 check. It exits non-zero if anything did not pass. `browse` needs the map that
 `cli` wrote in the same `TOPO_VERIFY_RUN`. Read [features/README.md](features/README.md)
 before claiming coverage. A proof covers only the entry points that were driven.
@@ -143,4 +150,5 @@ application's session duration. Keep it to re-prove within that window. Remove i
 - [`tests/demo-browser.mjs`](../../../tests/demo-browser.mjs) is the exhaustive
   demo sweep: all 43 inspectors, fullscreen, both palettes. Run it with
   `bun tests/demo-browser.mjs https://topo.mistystep.io $TOPO_VERIFY_RUN/evidence/demo-browser`
-  when the demo or viewer changes.
+  when the demo or viewer changes. No workflow runs it, and its `changelog
+  system palette` assertion can race the page load.

@@ -1,46 +1,46 @@
 {
-  "module:beacon:api": {
-    "id": "module:beacon:api",
-    "label": "beacon / api",
+  "module:example/beacon:api": {
+    "id": "module:example/beacon:api",
+    "label": "example/beacon / api",
     "kind": "module",
-    "repo": "beacon",
+    "repo": "example/beacon",
     "prefix": "api",
     "focal_ids": [
-      "file:beacon:api/src/main.rs",
-      "file:beacon:api/src/orders.rs"
+      "file:example/beacon:api/src/main.rs",
+      "file:example/beacon:api/src/orders.rs"
     ]
   },
-  "module:beacon:api/src": {
-    "id": "module:beacon:api/src",
-    "label": "beacon / api/src",
+  "module:example/beacon:api/src": {
+    "id": "module:example/beacon:api/src",
+    "label": "example/beacon / api/src",
     "kind": "module",
-    "repo": "beacon",
+    "repo": "example/beacon",
     "prefix": "api/src",
     "focal_ids": [
-      "file:beacon:api/src/main.rs",
-      "file:beacon:api/src/orders.rs"
+      "file:example/beacon:api/src/main.rs",
+      "file:example/beacon:api/src/orders.rs"
     ]
   },
-  "module:beacon:web": {
-    "id": "module:beacon:web",
-    "label": "beacon / web",
+  "module:example/beacon:web": {
+    "id": "module:example/beacon:web",
+    "label": "example/beacon / web",
     "kind": "module",
-    "repo": "beacon",
+    "repo": "example/beacon",
     "prefix": "web",
     "focal_ids": [
-      "file:beacon:web/src/app.ts",
-      "file:beacon:web/src/client.ts"
+      "file:example/beacon:web/src/app.ts",
+      "file:example/beacon:web/src/client.ts"
     ]
   },
-  "module:beacon:web/src": {
-    "id": "module:beacon:web/src",
-    "label": "beacon / web/src",
+  "module:example/beacon:web/src": {
+    "id": "module:example/beacon:web/src",
+    "label": "example/beacon / web/src",
     "kind": "module",
-    "repo": "beacon",
+    "repo": "example/beacon",
     "prefix": "web/src",
     "focal_ids": [
-      "file:beacon:web/src/app.ts",
-      "file:beacon:web/src/client.ts"
+      "file:example/beacon:web/src/app.ts",
+      "file:example/beacon:web/src/client.ts"
     ]
   },
   "portfolio": {
@@ -50,20 +50,20 @@
     "repo": null,
     "prefix": null,
     "focal_ids": [
-      "repo:beacon"
+      "repo:example/beacon"
     ]
   },
-  "repo:beacon": {
-    "id": "repo:beacon",
-    "label": "beacon",
+  "repo:example/beacon": {
+    "id": "repo:example/beacon",
+    "label": "example/beacon",
     "kind": "repository",
-    "repo": "beacon",
+    "repo": "example/beacon",
     "prefix": null,
     "focal_ids": [
-      "file:beacon:api/src/main.rs",
-      "file:beacon:api/src/orders.rs",
-      "file:beacon:web/src/app.ts",
-      "file:beacon:web/src/client.ts"
+      "file:example/beacon:api/src/main.rs",
+      "file:example/beacon:api/src/orders.rs",
+      "file:example/beacon:web/src/app.ts",
+      "file:example/beacon:web/src/client.ts"
     ]
   }
 }

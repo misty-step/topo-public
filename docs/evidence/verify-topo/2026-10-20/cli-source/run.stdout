@@ -5,9 +5,9 @@
       "dirty": false,
       "enumerated_files": 6,
       "errors": [],
-      "head": "10e9e0b15d9dff7253d99f9fc2f7a278f9b6f2c6",
-      "id": "collection:beacon",
-      "label": "beacon",
+      "head": "2ea83d7f55fa238af6ae634215d861853fa8f972",
+      "id": "collection:example/beacon",
+      "label": "example/beacon",
       "limits": [
         "Read-only source collection; no installs, tests, application execution, provider reads or model calls.",
         "Only Rust, Go, JS/TS static imports and Cargo/npm/Go declarations. Runtime bindings, scripts, aliases, conditional execution and call graphs need separate evidence.",
@@ -20,9 +20,9 @@
     }
   ],
   "entities": 9,
-  "output": "~/.cache/tmp/verify-topo/public-source/map",
+  "output": "~/.cache/tmp/verify-topo/pub2/map",
   "relationships": 6,
-  "revision": "6064887efabaa2b867a236caa016c84169ebaa458bf824a28156cfd176a69cb5",
+  "revision": "5f31344cf0b02b41797fa453152b48fa4e0dd4d763dc784b8fc7fa2f31967170",
   "scopes": 6,
   "sources": 7
 }

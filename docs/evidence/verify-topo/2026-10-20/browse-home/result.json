@@ -1,7 +1,7 @@
 {
   "mode": "home",
-  "target": "~/.cache/tmp/verify-topo/public-20261020/home/index.html",
-  "startedAt": "2026-10-20T21:57:03.898Z",
+  "target": "~/.cache/tmp/verify-topo/pub2/home/index.html",
+  "startedAt": "2026-10-20T22:14:47.478Z",
   "checks": [
     {
       "name": "home-desktop: title is Topo",
@@ -24,9 +24,19 @@
       "detail": "projects"
     },
     {
-      "name": "home-desktop: Topo link returns home",
+      "name": "home-desktop: project row links to its source map",
       "ok": true,
       "detail": ""
+    },
+    {
+      "name": "home-desktop: source map opens from the project row",
+      "ok": true,
+      "detail": "scope-43fd5e500dfad1db.html"
+    },
+    {
+      "name": "home-desktop: Topo home link returns to the catalogue",
+      "ok": true,
+      "detail": "home/index.html"
     },
     {
       "name": "home-desktop: no page errors",
@@ -54,6 +64,6 @@
       "detail": ""
     }
   ],
-  "finishedAt": "2026-10-20T21:57:04.372Z",
+  "finishedAt": "2026-10-20T22:14:49.247Z",
   "ok": true
 }

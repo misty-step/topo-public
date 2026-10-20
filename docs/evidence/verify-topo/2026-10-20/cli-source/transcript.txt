@@ -2,7 +2,7 @@ $ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo --vers
 exit 0
 stdout: topo 0.4.0 (development)
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo run --repo beacon=~/.cache/tmp/verify-topo/public-source/fixture --out ~/.cache/tmp/verify-topo/public-source/map
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo run --repo example/beacon=~/.cache/tmp/verify-topo/pub2/fixture --out ~/.cache/tmp/verify-topo/pub2/map
 exit 0
 stdout: {
 stdout:   "collections": [
@@ -11,43 +11,43 @@ stdout:       "coverage": "partial",
 stdout:       "dirty": false,
 stdout:       "enumerated_files": 6,
 stdout:       "errors": [],
-stdout:       "head": "10e9e0b15d9dff7253d99f9fc2f7a278f9b6f2c6",
-stdout:       "id": "collection:beacon",
-stdout:       "label": "beacon",
+stdout:       "head": "2ea83d7f55fa238af6ae634215d861853fa8f972",
+stdout:       "id": "collection:example/beacon",
+stdout:       "label": "example/beacon",
 stdout:       "limits": [
 stdout:         "Read-only source collection; no installs, tests, application execution, provider reads or model calls.",
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo scopes --graph ~/.cache/tmp/verify-topo/public-source/map/graph.json
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo scopes --graph ~/.cache/tmp/verify-topo/pub2/map/graph.json
 exit 0
 stdout: {
-stdout:   "module:beacon:api": {
-stdout:     "id": "module:beacon:api",
-stdout:     "label": "beacon / api",
+stdout:   "module:example/beacon:api": {
+stdout:     "id": "module:example/beacon:api",
+stdout:     "label": "example/beacon / api",
 stdout:     "kind": "module",
-stdout:     "repo": "beacon",
+stdout:     "repo": "example/beacon",
 stdout:     "prefix": "api",
 stdout:     "focal_ids": [
-stdout:       "file:beacon:api/src/main.rs",
-stdout:       "file:beacon:api/src/orders.rs"
+stdout:       "file:example/beacon:api/src/main.rs",
+stdout:       "file:example/beacon:api/src/orders.rs"
 stdout:     ]
 stdout:   },
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo query --graph ~/.cache/tmp/verify-topo/public-source/map/graph.json --entity file:beacon:web/src/app.ts --direction dependencies
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo query --graph ~/.cache/tmp/verify-topo/pub2/map/graph.json --entity file:example/beacon:web/src/app.ts --direction dependencies
 exit 0
 stdout: {
 stdout:   "entity": {
 stdout:     "category": "code",
 stdout:     "details": [],
 stdout:     "entity_kind": "source_file",
-stdout:     "id": "file:beacon:web/src/app.ts",
+stdout:     "id": "file:example/beacon:web/src/app.ts",
 stdout:     "label": "web/src/app.ts",
 stdout:     "members": [],
 stdout:     "path": "web/src/app.ts",
-stdout:     "repo": "beacon",
+stdout:     "repo": "example/beacon",
 stdout:     "sources": [
-stdout:       "source:beacon:web/src/app.ts"
+stdout:       "source:example/beacon:web/src/app.ts"
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo query --graph ~/.cache/tmp/verify-topo/public-source/map/graph.json --scope repo:beacon --revision 6064887efabaa2b867a236caa016c84169ebaa458bf824a28156cfd176a69cb5
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo query --graph ~/.cache/tmp/verify-topo/pub2/map/graph.json --scope repo:example/beacon --revision 5f31344cf0b02b41797fa453152b48fa4e0dd4d763dc784b8fc7fa2f31967170
 exit 0
 stdout: {
 stdout:   "collections": [
@@ -56,50 +56,50 @@ stdout:       "coverage": "partial",
 stdout:       "dirty": false,
 stdout:       "enumerated_files": 6,
 stdout:       "errors": [],
-stdout:       "head": "10e9e0b15d9dff7253d99f9fc2f7a278f9b6f2c6",
-stdout:       "id": "collection:beacon",
-stdout:       "label": "beacon",
+stdout:       "head": "2ea83d7f55fa238af6ae634215d861853fa8f972",
+stdout:       "id": "collection:example/beacon",
+stdout:       "label": "example/beacon",
 stdout:       "limits": [
 stdout:         "Read-only source collection; no installs, tests, application execution, provider reads or model calls.",
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo render --graph ~/.cache/tmp/verify-topo/public-source/map/graph.json --out ~/.cache/tmp/verify-topo/public-source/rendered
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo render --graph ~/.cache/tmp/verify-topo/pub2/map/graph.json --out ~/.cache/tmp/verify-topo/pub2/rendered
 exit 0
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo state --input ~/.cache/tmp/verify-topo/public-source/state.json --out ~/.cache/tmp/verify-topo/public-source/state-out
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo state --input ~/.cache/tmp/verify-topo/pub2/state.json --out ~/.cache/tmp/verify-topo/pub2/state-out
 exit 0
 stdout: {
 stdout:   "archive": 0,
 stdout:   "focus": 0,
 stdout:   "maintain": 1,
-stdout:   "output": "~/.cache/tmp/verify-topo/public-source/state-out",
+stdout:   "output": "~/.cache/tmp/verify-topo/pub2/state-out",
 stdout:   "repositories": 1
 stdout: }
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo run --repo beacon=~/.cache/tmp/verify-topo/public-source/fixture --out ~/.cache/tmp/verify-topo/public-source/map
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo run --repo example/beacon=~/.cache/tmp/verify-topo/pub2/fixture --out ~/.cache/tmp/verify-topo/pub2/map
 exit 1
 stderr: topo: Output already exists; use a fresh run directory
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo query --graph ~/.cache/tmp/verify-topo/public-source/map/graph.json --scope module:beacon:nope
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo query --graph ~/.cache/tmp/verify-topo/pub2/map/graph.json --scope module:example/beacon:nope
 exit 1
 stderr: topo: Unknown scope
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo query --graph ~/.cache/tmp/verify-topo/public-source/map/graph.json --revision 0000
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo query --graph ~/.cache/tmp/verify-topo/pub2/map/graph.json --revision 0000
 exit 1
 stderr: topo: Graph revision mismatch
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo run --repo x=~/.cache/tmp/verify-topo/public-source/not-a-repo --out ~/.cache/tmp/verify-topo/public-source/out-not-a-repo
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo run --repo x=~/.cache/tmp/verify-topo/pub2/not-a-repo --out ~/.cache/tmp/verify-topo/pub2/out-not-a-repo
 exit 1
 stderr: topo: Git rev-parse failed; no absence established
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo run --repo x=~/.cache/tmp/verify-topo/public-source/empty-repo --out ~/.cache/tmp/verify-topo/public-source/out-empty-repo
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo run --repo x=~/.cache/tmp/verify-topo/pub2/empty-repo --out ~/.cache/tmp/verify-topo/pub2/out-empty-repo
 exit 1
 stderr: topo: Git rev-parse failed; no absence established
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo run --repo ../x=~/.cache/tmp/verify-topo/public-source/fixture --out ~/.cache/tmp/verify-topo/public-source/out-bad-namespace
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo run --repo ../x=~/.cache/tmp/verify-topo/pub2/fixture --out ~/.cache/tmp/verify-topo/pub2/out-bad-namespace
 exit 1
 stderr: topo: Invalid caller namespace
 
-$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo query --graph ~/.cache/tmp/verify-topo/public-source/tampered.json
+$ ~/.t3/worktrees/topo-public/verify-verification-skill/target/debug/topo query --graph ~/.cache/tmp/verify-topo/pub2/tampered.json
 exit 1
 stderr: topo: Graph revision does not match its content
 

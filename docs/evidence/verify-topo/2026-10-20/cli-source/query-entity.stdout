@@ -3,13 +3,13 @@
     "category": "code",
     "details": [],
     "entity_kind": "source_file",
-    "id": "file:beacon:web/src/app.ts",
+    "id": "file:example/beacon:web/src/app.ts",
     "label": "web/src/app.ts",
     "members": [],
     "path": "web/src/app.ts",
-    "repo": "beacon",
+    "repo": "example/beacon",
     "sources": [
-      "source:beacon:web/src/app.ts"
+      "source:example/beacon:web/src/app.ts"
     ],
     "status": "configured",
     "summary": "Declared in source/configuration; installed and runtime state were not probed."
@@ -19,13 +19,13 @@
       "category": "code",
       "details": [],
       "entity_kind": "source_file",
-      "id": "file:beacon:web/src/app.ts",
+      "id": "file:example/beacon:web/src/app.ts",
       "label": "web/src/app.ts",
       "members": [],
       "path": "web/src/app.ts",
-      "repo": "beacon",
+      "repo": "example/beacon",
       "sources": [
-        "source:beacon:web/src/app.ts"
+        "source:example/beacon:web/src/app.ts"
       ],
       "status": "configured",
       "summary": "Declared in source/configuration; installed and runtime state were not probed."
@@ -34,13 +34,13 @@
       "category": "code",
       "details": [],
       "entity_kind": "source_file",
-      "id": "file:beacon:web/src/client.ts",
+      "id": "file:example/beacon:web/src/client.ts",
       "label": "web/src/client.ts",
       "members": [],
       "path": "web/src/client.ts",
-      "repo": "beacon",
+      "repo": "example/beacon",
       "sources": [
-        "source:beacon:web/src/client.ts"
+        "source:example/beacon:web/src/client.ts"
       ],
       "status": "configured",
       "summary": "Declared in source/configuration; installed and runtime state were not probed."
@@ -55,8 +55,8 @@
       "path": null,
       "repo": null,
       "sources": [
-        "source:beacon:web/package.json",
-        "source:beacon:web/src/app.ts"
+        "source:example/beacon:web/package.json",
+        "source:example/beacon:web/src/app.ts"
       ],
       "status": "configured",
       "summary": "Declared in source/configuration; installed and runtime state were not probed."
@@ -66,41 +66,41 @@
     {
       "evidence": "config",
       "family": "imports",
-      "from": "file:beacon:web/src/app.ts",
-      "id": "74153e0e94c574c6e6ff5789f5afd8eeeb2e9369b450d11b82ff7efe0be28d36",
+      "from": "file:example/beacon:web/src/app.ts",
+      "id": "d6276d9e2f5b5251641f9428632ca66e76eadc596107ae564f2b689d37bc70f3",
       "label": "Static typescript import",
       "line": 1,
       "relation": "imports",
       "sources": [
-        "source:beacon:web/src/app.ts"
+        "source:example/beacon:web/src/app.ts"
       ],
-      "to": "file:beacon:web/src/client.ts"
+      "to": "file:example/beacon:web/src/client.ts"
     },
     {
       "evidence": "config",
       "family": "imports",
-      "from": "file:beacon:web/src/app.ts",
-      "id": "fc040c1cc38476f74b1079e2435f7bfa5d005f60db7e3e989c92f49754e8f241",
+      "from": "file:example/beacon:web/src/app.ts",
+      "id": "e55a5e19876e45485b8f85c9de0897b4568e58392541a30e5626cc3ffeec4d04",
       "label": "imports: node dependency",
       "line": 2,
       "relation": "imports",
       "sources": [
-        "source:beacon:web/src/app.ts"
+        "source:example/beacon:web/src/app.ts"
       ],
       "to": "package:npm:react"
     }
   ],
-  "revision": "6064887efabaa2b867a236caa016c84169ebaa458bf824a28156cfd176a69cb5",
+  "revision": "5f31344cf0b02b41797fa453152b48fa4e0dd4d763dc784b8fc7fa2f31967170",
   "scope": null,
   "sources": [
     {
-      "date": "2026-10-20T21:57:47Z",
-      "head": "10e9e0b15d9dff7253d99f9fc2f7a278f9b6f2c6",
-      "id": "source:beacon:web/src/app.ts",
-      "label": "beacon/web/src/app.ts",
+      "date": "2026-10-20T22:14:42Z",
+      "head": "2ea83d7f55fa238af6ae634215d861853fa8f972",
+      "id": "source:example/beacon:web/src/app.ts",
+      "label": "example/beacon/web/src/app.ts",
       "level": "config",
       "path": "web/src/app.ts",
-      "repo": "beacon",
+      "repo": "example/beacon",
       "result": "Static source/config declaration; not installed or runtime proof. No source body exported.",
       "sha256": "35d888baeee6eb2482f093008735a66eb9890c24b020590f2918e0810888809b"
     }

@@ -1,7 +1,7 @@
 {
   "mode": "map",
-  "target": "~/.cache/tmp/verify-topo/public-20261020/map/index.html",
-  "startedAt": "2026-10-20T21:57:02.597Z",
+  "target": "~/.cache/tmp/verify-topo/pub2/map/index.html",
+  "startedAt": "2026-10-20T22:14:44.703Z",
   "checks": [
     {
       "name": "map-desktop-light: title names Topo",
@@ -16,7 +16,7 @@
     {
       "name": "map-desktop-light: Map scope lists portfolio, repo and module scopes",
       "ok": true,
-      "detail": "Project · selected repositories | Module · beacon / api | Module · beacon / api/src | Module · beacon / web | Module · beacon / web/src | Repo · beacon"
+      "detail": "Project · selected repositories | Module · example/beacon / api | Module · example/beacon / api/src | Module · example/beacon / web | Module · example/beacon / web/src | Repo · example/beacon"
     },
     {
       "name": "map-desktop-light: map renders nodes",
@@ -26,7 +26,7 @@
     {
       "name": "map-desktop-light: selecting a node opens its inspector",
       "ok": true,
-      "detail": "beacon"
+      "detail": "Overview -> example/beacon (repo:example/beacon)"
     },
     {
       "name": "map-desktop-light: inspector has no literal null/undefined fragments",
@@ -34,9 +34,14 @@
       "detail": ""
     },
     {
-      "name": "map-desktop-light: search narrows the map",
+      "name": "map-desktop-light: search finds matching nodes",
       "ok": true,
       "detail": "1 match"
+    },
+    {
+      "name": "map-desktop-light: search reports zero matches for an absent node",
+      "ok": true,
+      "detail": "0 matches"
     },
     {
       "name": "map-desktop-light: Inventory view lists the nodes",
@@ -51,12 +56,17 @@
     {
       "name": "map-desktop-light: choosing a scope opens its sibling page",
       "ok": true,
-      "detail": "scope-3903771ca3c2e155.html shows Repo · beacon"
+      "detail": "scope-43fd5e500dfad1db.html shows Repo · example/beacon"
     },
     {
-      "name": "map-desktop-light: Fullscreen toggles and Escape returns",
+      "name": "map-desktop-light: Fullscreen expands (control becomes Exit fullscreen, pressed)",
       "ok": true,
-      "detail": ""
+      "detail": "true"
+    },
+    {
+      "name": "map-desktop-light: Escape leaves fullscreen and keeps the map",
+      "ok": true,
+      "detail": "false"
     },
     {
       "name": "map-desktop-light: no page errors",
@@ -81,7 +91,7 @@
     {
       "name": "map-desktop-dark: Map scope lists portfolio, repo and module scopes",
       "ok": true,
-      "detail": "Project · selected repositories | Module · beacon / api | Module · beacon / api/src | Module · beacon / web | Module · beacon / web/src | Repo · beacon"
+      "detail": "Project · selected repositories | Module · example/beacon / api | Module · example/beacon / api/src | Module · example/beacon / web | Module · example/beacon / web/src | Repo · example/beacon"
     },
     {
       "name": "map-desktop-dark: map renders nodes",
@@ -91,7 +101,7 @@
     {
       "name": "map-desktop-dark: selecting a node opens its inspector",
       "ok": true,
-      "detail": "beacon"
+      "detail": "Overview -> example/beacon (repo:example/beacon)"
     },
     {
       "name": "map-desktop-dark: inspector has no literal null/undefined fragments",
@@ -99,9 +109,14 @@
       "detail": ""
     },
     {
-      "name": "map-desktop-dark: search narrows the map",
+      "name": "map-desktop-dark: search finds matching nodes",
       "ok": true,
       "detail": "1 match"
+    },
+    {
+      "name": "map-desktop-dark: search reports zero matches for an absent node",
+      "ok": true,
+      "detail": "0 matches"
     },
     {
       "name": "map-desktop-dark: Inventory view lists the nodes",
@@ -116,12 +131,17 @@
     {
       "name": "map-desktop-dark: choosing a scope opens its sibling page",
       "ok": true,
-      "detail": "scope-3903771ca3c2e155.html shows Repo · beacon"
+      "detail": "scope-43fd5e500dfad1db.html shows Repo · example/beacon"
     },
     {
-      "name": "map-desktop-dark: Fullscreen toggles and Escape returns",
+      "name": "map-desktop-dark: Fullscreen expands (control becomes Exit fullscreen, pressed)",
       "ok": true,
-      "detail": ""
+      "detail": "true"
+    },
+    {
+      "name": "map-desktop-dark: Escape leaves fullscreen and keeps the map",
+      "ok": true,
+      "detail": "false"
     },
     {
       "name": "map-desktop-dark: no page errors",
@@ -146,7 +166,7 @@
     {
       "name": "map-phone-light: Map scope lists portfolio, repo and module scopes",
       "ok": true,
-      "detail": "Project · selected repositories | Module · beacon / api | Module · beacon / api/src | Module · beacon / web | Module · beacon / web/src | Repo · beacon"
+      "detail": "Project · selected repositories | Module · example/beacon / api | Module · example/beacon / api/src | Module · example/beacon / web | Module · example/beacon / web/src | Repo · example/beacon"
     },
     {
       "name": "map-phone-light: map renders nodes",
@@ -176,7 +196,7 @@
     {
       "name": "map-phone-dark: Map scope lists portfolio, repo and module scopes",
       "ok": true,
-      "detail": "Project · selected repositories | Module · beacon / api | Module · beacon / api/src | Module · beacon / web | Module · beacon / web/src | Repo · beacon"
+      "detail": "Project · selected repositories | Module · example/beacon / api | Module · example/beacon / api/src | Module · example/beacon / web | Module · example/beacon / web/src | Repo · example/beacon"
     },
     {
       "name": "map-phone-dark: map renders nodes",
@@ -194,6 +214,6 @@
       "detail": ""
     }
   ],
-  "finishedAt": "2026-10-20T21:57:03.679Z",
+  "finishedAt": "2026-10-20T22:14:46.717Z",
   "ok": true
 }

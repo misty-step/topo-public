@@ -1,24 +1,24 @@
-$ env TOPO_INSTALL_DIR=~/.cache/tmp/verify-topo/public-20261020/bin sh ~/.cache/tmp/verify-topo/public-20261020/install-topo.sh
+$ env TOPO_INSTALL_DIR=~/.cache/tmp/verify-topo/pub2-installed/bin sh ~/.cache/tmp/verify-topo/pub2-installed/install-topo.sh
 exit 0
 stdout: topo 0.4.0 (2e892f9a1ccf4ec1352e19552ae2629a8a4e0d32)
 stdout: 
-stdout: Installed ~/.cache/tmp/verify-topo/public-20261020/bin/topo
+stdout: Installed ~/.cache/tmp/verify-topo/pub2-installed/bin/topo
 stdout: Add it to your shell PATH:
-stdout:   export PATH="~/.cache/tmp/verify-topo/public-20261020/bin:$PATH"
+stdout:   export PATH="~/.cache/tmp/verify-topo/pub2-installed/bin:$PATH"
 stdout: 
 stdout: In a Git repository:
 stdout:   topo run --repo app=. --out topo-map
 stdout: Then open topo-map/index.html.
 
-$ env TOPO_INSTALL_DIR=~/.cache/tmp/verify-topo/public-20261020/bin sh ~/.cache/tmp/verify-topo/public-20261020/install-topo.sh
+$ env TOPO_INSTALL_DIR=~/.cache/tmp/verify-topo/pub2-installed/bin sh ~/.cache/tmp/verify-topo/pub2-installed/install-topo.sh
 exit 1
-stderr: Already exists: ~/.cache/tmp/verify-topo/public-20261020/bin/topo. Use --force to explicitly replace it, or choose TOPO_INSTALL_DIR.
+stderr: Already exists: ~/.cache/tmp/verify-topo/pub2-installed/bin/topo. Use --force to explicitly replace it, or choose TOPO_INSTALL_DIR.
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo --version
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo --version
 exit 0
 stdout: topo 0.4.0 (2e892f9a1ccf4ec1352e19552ae2629a8a4e0d32)
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo run --repo beacon=~/.cache/tmp/verify-topo/public-20261020/fixture --out ~/.cache/tmp/verify-topo/public-20261020/map
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo run --repo example/beacon=~/.cache/tmp/verify-topo/pub2-installed/fixture --out ~/.cache/tmp/verify-topo/pub2-installed/map
 exit 0
 stdout: {
 stdout:   "collections": [
@@ -27,43 +27,43 @@ stdout:       "coverage": "partial",
 stdout:       "dirty": false,
 stdout:       "enumerated_files": 6,
 stdout:       "errors": [],
-stdout:       "head": "542187fb1266a2f0c3df0fb7af705fd814777ccf",
-stdout:       "id": "collection:beacon",
-stdout:       "label": "beacon",
+stdout:       "head": "7c81b9856f34cc3f777e3262ecba74bda4bbda30",
+stdout:       "id": "collection:example/beacon",
+stdout:       "label": "example/beacon",
 stdout:       "limits": [
 stdout:         "Read-only source collection; no installs, tests, application execution, provider reads or model calls.",
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo scopes --graph ~/.cache/tmp/verify-topo/public-20261020/map/graph.json
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo scopes --graph ~/.cache/tmp/verify-topo/pub2-installed/map/graph.json
 exit 0
 stdout: {
-stdout:   "module:beacon:api": {
-stdout:     "id": "module:beacon:api",
-stdout:     "label": "beacon / api",
+stdout:   "module:example/beacon:api": {
+stdout:     "id": "module:example/beacon:api",
+stdout:     "label": "example/beacon / api",
 stdout:     "kind": "module",
-stdout:     "repo": "beacon",
+stdout:     "repo": "example/beacon",
 stdout:     "prefix": "api",
 stdout:     "focal_ids": [
-stdout:       "file:beacon:api/src/main.rs",
-stdout:       "file:beacon:api/src/orders.rs"
+stdout:       "file:example/beacon:api/src/main.rs",
+stdout:       "file:example/beacon:api/src/orders.rs"
 stdout:     ]
 stdout:   },
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo query --graph ~/.cache/tmp/verify-topo/public-20261020/map/graph.json --entity file:beacon:web/src/app.ts --direction dependencies
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo query --graph ~/.cache/tmp/verify-topo/pub2-installed/map/graph.json --entity file:example/beacon:web/src/app.ts --direction dependencies
 exit 0
 stdout: {
 stdout:   "entity": {
 stdout:     "category": "code",
 stdout:     "details": [],
 stdout:     "entity_kind": "source_file",
-stdout:     "id": "file:beacon:web/src/app.ts",
+stdout:     "id": "file:example/beacon:web/src/app.ts",
 stdout:     "label": "web/src/app.ts",
 stdout:     "members": [],
 stdout:     "path": "web/src/app.ts",
-stdout:     "repo": "beacon",
+stdout:     "repo": "example/beacon",
 stdout:     "sources": [
-stdout:       "source:beacon:web/src/app.ts"
+stdout:       "source:example/beacon:web/src/app.ts"
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo query --graph ~/.cache/tmp/verify-topo/public-20261020/map/graph.json --scope repo:beacon --revision f68196b3a92a1844df65a7510e12b32cd862cd07e8ec404b374c11d0dc0cc93b
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo query --graph ~/.cache/tmp/verify-topo/pub2-installed/map/graph.json --scope repo:example/beacon --revision ced6ef4255a640574871374764c233ab6b60fdc445cdafebf8c757a95f4ae1a9
 exit 0
 stdout: {
 stdout:   "collections": [
@@ -72,50 +72,50 @@ stdout:       "coverage": "partial",
 stdout:       "dirty": false,
 stdout:       "enumerated_files": 6,
 stdout:       "errors": [],
-stdout:       "head": "542187fb1266a2f0c3df0fb7af705fd814777ccf",
-stdout:       "id": "collection:beacon",
-stdout:       "label": "beacon",
+stdout:       "head": "7c81b9856f34cc3f777e3262ecba74bda4bbda30",
+stdout:       "id": "collection:example/beacon",
+stdout:       "label": "example/beacon",
 stdout:       "limits": [
 stdout:         "Read-only source collection; no installs, tests, application execution, provider reads or model calls.",
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo render --graph ~/.cache/tmp/verify-topo/public-20261020/map/graph.json --out ~/.cache/tmp/verify-topo/public-20261020/rendered
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo render --graph ~/.cache/tmp/verify-topo/pub2-installed/map/graph.json --out ~/.cache/tmp/verify-topo/pub2-installed/rendered
 exit 0
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo state --input ~/.cache/tmp/verify-topo/public-20261020/state.json --out ~/.cache/tmp/verify-topo/public-20261020/state-out
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo state --input ~/.cache/tmp/verify-topo/pub2-installed/state.json --out ~/.cache/tmp/verify-topo/pub2-installed/state-out
 exit 0
 stdout: {
 stdout:   "archive": 0,
 stdout:   "focus": 0,
 stdout:   "maintain": 1,
-stdout:   "output": "~/.cache/tmp/verify-topo/public-20261020/state-out",
+stdout:   "output": "~/.cache/tmp/verify-topo/pub2-installed/state-out",
 stdout:   "repositories": 1
 stdout: }
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo run --repo beacon=~/.cache/tmp/verify-topo/public-20261020/fixture --out ~/.cache/tmp/verify-topo/public-20261020/map
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo run --repo example/beacon=~/.cache/tmp/verify-topo/pub2-installed/fixture --out ~/.cache/tmp/verify-topo/pub2-installed/map
 exit 1
 stderr: topo: Output already exists; use a fresh run directory
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo query --graph ~/.cache/tmp/verify-topo/public-20261020/map/graph.json --scope module:beacon:nope
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo query --graph ~/.cache/tmp/verify-topo/pub2-installed/map/graph.json --scope module:example/beacon:nope
 exit 1
 stderr: topo: Unknown scope
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo query --graph ~/.cache/tmp/verify-topo/public-20261020/map/graph.json --revision 0000
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo query --graph ~/.cache/tmp/verify-topo/pub2-installed/map/graph.json --revision 0000
 exit 1
 stderr: topo: Graph revision mismatch
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo run --repo x=~/.cache/tmp/verify-topo/public-20261020/not-a-repo --out ~/.cache/tmp/verify-topo/public-20261020/out-not-a-repo
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo run --repo x=~/.cache/tmp/verify-topo/pub2-installed/not-a-repo --out ~/.cache/tmp/verify-topo/pub2-installed/out-not-a-repo
 exit 1
 stderr: topo: Git rev-parse failed; no absence established
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo run --repo x=~/.cache/tmp/verify-topo/public-20261020/empty-repo --out ~/.cache/tmp/verify-topo/public-20261020/out-empty-repo
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo run --repo x=~/.cache/tmp/verify-topo/pub2-installed/empty-repo --out ~/.cache/tmp/verify-topo/pub2-installed/out-empty-repo
 exit 1
 stderr: topo: Git rev-parse failed; no absence established
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo run --repo ../x=~/.cache/tmp/verify-topo/public-20261020/fixture --out ~/.cache/tmp/verify-topo/public-20261020/out-bad-namespace
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo run --repo ../x=~/.cache/tmp/verify-topo/pub2-installed/fixture --out ~/.cache/tmp/verify-topo/pub2-installed/out-bad-namespace
 exit 1
 stderr: topo: Invalid caller namespace
 
-$ ~/.cache/tmp/verify-topo/public-20261020/bin/topo query --graph ~/.cache/tmp/verify-topo/public-20261020/tampered.json
+$ ~/.cache/tmp/verify-topo/pub2-installed/bin/topo query --graph ~/.cache/tmp/verify-topo/pub2-installed/tampered.json
 exit 1
 stderr: topo: Graph revision does not match its content
 

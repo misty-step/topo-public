@@ -2,6 +2,6 @@
   "archive": 0,
   "focus": 0,
   "maintain": 1,
-  "output": "~/.cache/tmp/verify-topo/public-source/state-out",
+  "output": "~/.cache/tmp/verify-topo/pub2/state-out",
   "repositories": 1
 }
