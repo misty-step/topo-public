@@ -1,0 +1,146 @@
+---
+name: verify-topo
+description: Drive Topo end to end the way its users do. Covers the installed CLI (install, collect, scopes, query, render, state), the exported map browser opened from disk, the composed private home, the public site at topo.mistystep.io, and owner sign-in to a self-hosted private maps deployment. Use it to prove a Topo change works, to check a deployment, or when something about Topo looks wrong.
+---
+
+# Verify Topo
+
+Topo is a native Rust CLI. It writes offline HTML maps plus a JSON graph. The
+public site (https://topo.mistystep.io) serves the installer, docs and a
+fictional demo. An operator can also self-host an owner-only private maps
+Worker (`topo-maps`) behind Cloudflare Access, configured as in
+[docs/deployment.md](../../../docs/deployment.md). Everything here runs from a
+shell. One helper drives every journey:
+
+```sh
+.agents/skills/verify-topo/verify-topo <command>
+```
+
+Run it from the repository root, or from anywhere by path. It finds the checkout
+from its own location. Browser drives use Playwright from this checkout's locked
+`node_modules`, through `browser.mjs` in the same directory.
+
+## Launch
+
+There is no long-lived server to start. The CLI is short-lived. Every drive uses
+its own run directory, browser context and fixture.
+
+1. Once per checkout, run `verify-topo setup`. It runs
+   `bun install --frozen-lockfile` and `bunx --no-install playwright install chromium`.
+   Set `CHROMIUM_EXECUTABLE` to use an already-installed Chromium instead.
+2. Pick a run directory: `export TOPO_VERIFY_RUN=~/.cache/tmp/verify-topo/$(date -u +%Y%m%dT%H%M%SZ)`.
+   The default is `~/.cache/tmp/verify-topo/default`. Two concurrent runs must use
+   different directories. Nothing else is shared between runs except the owner
+   browser profile (see sign-in).
+3. Ready means `verify-topo doctor` prints no `FAIL`.
+
+The CLI journey installs the published executable from the public site into
+`$TOPO_VERIFY_RUN/bin` (`TOPO_INSTALL_DIR`, never `~/.local/bin`). To prove an
+unmerged change, use `verify-topo cli --source`. It drives `target/debug/topo`,
+built with `cargo build --locked -j 2 --bin topo --bin topo-home`.
+`browse` always builds `topo-home` from this checkout, because the installer does
+not ship it.
+
+## Doctor
+
+```sh
+.agents/skills/verify-topo/verify-topo doctor
+# Private deployment checks: point at your settings JSON and name the owner.
+export TOPO_VERIFY_PRIVATE_SETTINGS=/path/outside/checkout/private-settings.json
+export TOPO_VERIFY_OWNER_EMAIL=owner@example.test
+# Inject a read-only Cloudflare API token and the publishing service token
+# ({"client_id":…,"client_secret":…}) from your secret manager, never inline:
+CLOUDFLARE_API_TOKEN=… TOPO_MAPS_ACCESS_CREDENTIAL=… \
+  .agents/skills/verify-topo/verify-topo doctor --live
+```
+
+Doctor is read-only. Without `--live` it checks:
+
+- local tools and Playwright;
+- the checkout revision;
+- that public `/health` is `ok` and agrees with `/manifest.json`, and whether
+  the deployed source is in this checkout's history;
+- with `TOPO_VERIFY_PRIVATE_SETTINGS` set, that the private host
+  (`vars.PRIVATE_HOST`) sends anonymous visitors to `vars.ACCESS_TEAM_DOMAIN`.
+  Without it, every private check reports `SKIP` with the reason.
+
+`--live` adds the owner-identity configuration:
+
+- the Access application for the private host has the audience `vars.ACCESS_AUD`;
+- its allow policy includes `TOPO_VERIFY_OWNER_EMAIL`;
+- its login methods are listed. Set `TOPO_VERIFY_OWNER_IDP_TYPE` (for example
+  `oidc` or `onetimepin`) to require the owner's method;
+- the most recent owner login to that host in the Access log.
+
+It also reads the private manifest with the publishing service token. That proves
+the deployed bundle exists. It is not owner proof. Run doctor first, and again
+after any failed drive.
+
+## Drive
+
+| Command | Journey | Feature file |
+| --- | --- | --- |
+| `verify-topo cli [--source]` | install, collect, scopes, query, render, state, and every refusal | [cli](features/cli.md) |
+| `verify-topo browse` | exported map from disk (desktop/phone, light/dark, offline), composed home | [source-browser](features/source-browser.md), [private-home](features/private-home.md) |
+| `verify-topo site [BASE_URL]` | public site, docs, demo, changelog, health, 404, slow network | [public-site](features/public-site.md) |
+| `verify-topo sign-in [--headed] [--password-env NAME]` | signed-out gate, wrong identity, owner session, owner-only page | [sign-in](features/sign-in.md) |
+| `verify-topo all [--source]` | doctor, cli, browse, site, sign-in in order | all |
+
+Each command prints one `PASS`, `FAIL`, `SKIP`, `INFO` or `UNPROVEN` line per
+check. It exits non-zero if anything did not pass. `browse` needs the map that
+`cli` wrote in the same `TOPO_VERIFY_RUN`. Read [features/README.md](features/README.md)
+before claiming coverage. A proof covers only the entry points that were driven.
+
+## Evidence
+
+Everything goes to `$TOPO_VERIFY_RUN/evidence/`:
+
+- `cli/transcript.txt`: every command, its exit code, the head of stdout, and
+  stderr. Full `cli/<step>.stdout` and `.stderr` sit beside it.
+- `browse/`, `browse-home/`, `site/`, `sign-in/`, `sign-in/owner/`: each has a
+  `result.json` (every check with pass/fail and detail), PNG screenshots per
+  device and colour scheme, and `*.aria.txt` accessibility snapshots.
+
+Proof standards:
+
+- Drive the user path: the published installer, real flags, real clicks on
+  accessible names. Do not use internal setters or test-only endpoints.
+- Capture the action and the state it produced. A CLI step records its command
+  and output. A map check selects a node and then reads the inspector.
+- Check side effects, such as files written (`index.html`, `graph.json`,
+  `manifest.json`), revisions kept across `render`, and ignored `.env` bytes
+  absent from outputs.
+- Failure states must fail loudly. Every refusal step asserts a non-zero exit
+  and records the message.
+- Owner proof is the Access identity of the browser session plus the owner-only
+  page. An HTTP 200 for a service token, a redirect, or a sent email is not owner
+  proof.
+- Private maps are personal content. The owner drive records only identity,
+  manifest schema, timestamps and counts. Never screenshot or commit private map
+  pages. Committed evidence goes under `docs/evidence/verify-topo/<date>/`.
+
+## Cleanup
+
+```sh
+.agents/skills/verify-topo/verify-topo cleanup            # keeps $TOPO_VERIFY_RUN/evidence
+.agents/skills/verify-topo/verify-topo cleanup --profile  # also drops the owner browser profile
+```
+
+Cleanup removes the installed binary, fixture repositories, maps, the home and
+scratch files in `$TOPO_VERIFY_RUN`. It never removes `evidence/`. Every
+browser the helper starts closes when its drive ends. No server is started, so
+there is nothing to kill. The owner profile at
+`~/.cache/tmp/verify-topo/owner-profile` holds an Access session for the
+application's session duration. Keep it to re-prove within that window. Remove it with `--profile` when done.
+
+## Limits
+
+- Production is read-only: GET and HEAD to the public site, one refused POST,
+  and an owner sign-in, which creates only an Access session. Never deploy or
+  roll back from this skill.
+- Write journeys (`run`, `render`, `state`, `topo-home`) use the fictional
+  fixture under `$TOPO_VERIFY_RUN`. Never point them at real private inputs.
+- [`tests/demo-browser.mjs`](../../../tests/demo-browser.mjs) is the exhaustive
+  demo sweep: all 43 inspectors, fullscreen, both palettes. Run it with
+  `bun tests/demo-browser.mjs https://topo.mistystep.io $TOPO_VERIFY_RUN/evidence/demo-browser`
+  when the demo or viewer changes.

@@ -1,0 +1,13 @@
+- banner:
+  - link "Topo":
+    - /url: index.html
+- main:
+  - region "More":
+    - link "Projects 1":
+      - /url: projects/index.html
+    - group: Repos Partial 1 of 1
+- contentinfo:
+  - text: 0e052cc4
+  - link "Catalogue":
+    - /url: catalogue.json
+  - group: Basis

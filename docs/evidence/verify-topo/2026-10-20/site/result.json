@@ -1,0 +1,156 @@
+{
+  "mode": "site",
+  "target": "https://topo.mistystep.io",
+  "startedAt": "2026-10-20T21:57:04.581Z",
+  "checks": [
+    {
+      "name": "site: /health is ok",
+      "ok": true,
+      "detail": "200 58a686e6dec655161f0d225b538d0f03f991dfce"
+    },
+    {
+      "name": "site: /health source equals /manifest.json source_revision",
+      "ok": true,
+      "detail": "58a686e6dec655161f0d225b538d0f03f991dfce vs 58a686e6dec655161f0d225b538d0f03f991dfce"
+    },
+    {
+      "name": "site: install.sh version equals manifest native_version",
+      "ok": true,
+      "detail": "0.4.0 vs 0.4.0"
+    },
+    {
+      "name": "site: unknown path returns 404 page",
+      "ok": true,
+      "detail": "404"
+    },
+    {
+      "name": "site: POST is refused",
+      "ok": true,
+      "detail": "405"
+    },
+    {
+      "name": "site-desktop-light: home heading",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-desktop-light: demo embed present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-desktop-light: Docs opens",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-desktop-light: quickstart shows the install command",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-desktop-light: Changelog renders",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-desktop-light: demo inspector opens docs.beacon.example",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-desktop-light: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-desktop-dark: home heading",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-desktop-dark: demo embed present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-desktop-dark: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-phone-light: home heading",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-phone-light: demo embed present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-phone-light: Docs opens",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-phone-light: quickstart shows the install command",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-phone-light: Changelog renders",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-phone-light: demo map renders on phone",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-phone-light: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-phone-dark: home heading",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-phone-dark: demo embed present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-phone-dark: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "site-slow-network: demo usable on throttled phone",
+      "ok": true,
+      "detail": "1273 ms"
+    }
+  ],
+  "identity": {
+    "health": {
+      "status": "ok",
+      "service": "topo-site",
+      "environment": "production",
+      "source": "58a686e6dec655161f0d225b538d0f03f991dfce",
+      "release": "topo-site@58a686e6dec655161f0d225b538d0f03f991dfce",
+      "version": "cd91d20a-e1af-404e-8c31-0a72b07d9fb8"
+    },
+    "manifest": {
+      "native_source_revision": "2e892f9a1ccf4ec1352e19552ae2629a8a4e0d32",
+      "native_version": "0.4.0",
+      "schema": "topo.code.v1",
+      "source_revision": "58a686e6dec655161f0d225b538d0f03f991dfce",
+      "version": "0.4.0"
+    }
+  },
+  "finishedAt": "2026-10-20T21:57:10.064Z",
+  "ok": true
+}

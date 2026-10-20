@@ -1,0 +1,213 @@
+{
+  "collections": [
+    {
+      "coverage": "partial",
+      "dirty": false,
+      "enumerated_files": 6,
+      "errors": [],
+      "head": "10e9e0b15d9dff7253d99f9fc2f7a278f9b6f2c6",
+      "id": "collection:beacon",
+      "label": "beacon",
+      "limits": [
+        "Read-only source collection; no installs, tests, application execution, provider reads or model calls.",
+        "Only Rust, Go, JS/TS static imports and Cargo/npm/Go declarations. Runtime bindings, scripts, aliases, conditional execution and call graphs need separate evidence.",
+        "Secrets/ignored/generated paths excluded; symlinks never followed. Per-file hashes identify observed bytes; a dirty worktree is not HEAD's content.",
+        "Repository identity uses the explicit caller namespace; rename/native-provider identity is not established.",
+        "Directory scopes, not complete semantic/symbol extraction. Go workspaces/nested manifests, Cargo target/workspace dependency tables, JS path-alias configs and dynamic dependencies need additional resolution.",
+        "Budgets: 2,000 supported files, 1 MiB per file, 16 MiB total source bytes. A skipped path remains unknown."
+      ],
+      "read_files": 6
+    }
+  ],
+  "edges": [
+    {
+      "evidence": "config",
+      "family": "imports",
+      "from": "file:beacon:web/src/app.ts",
+      "id": "74153e0e94c574c6e6ff5789f5afd8eeeb2e9369b450d11b82ff7efe0be28d36",
+      "label": "Static typescript import",
+      "line": 1,
+      "relation": "imports",
+      "sources": [
+        "source:beacon:web/src/app.ts"
+      ],
+      "to": "file:beacon:web/src/client.ts"
+    },
+    {
+      "evidence": "config",
+      "family": "declares",
+      "from": "repo:beacon",
+      "id": "7bc543fd2e4c7570bdd920416bcd8fe766a1afd28ce6c8dacf71a194a4adee1c",
+      "label": "declares: rust dependency",
+      "line": null,
+      "relation": "declares",
+      "sources": [
+        "source:beacon:api/Cargo.toml"
+      ],
+      "to": "package:rust:serde"
+    },
+    {
+      "evidence": "config",
+      "family": "declares",
+      "from": "repo:beacon",
+      "id": "9e285614b0b5cd67ce436ca8056b9f280166a03e95e79d8c54a860212a613724",
+      "label": "dependencies: react; requirement 19.0.0",
+      "line": null,
+      "relation": "declares",
+      "sources": [
+        "source:beacon:web/package.json"
+      ],
+      "to": "package:npm:react"
+    },
+    {
+      "evidence": "config",
+      "family": "imports",
+      "from": "file:beacon:api/src/main.rs",
+      "id": "def3ee48d0b9ab96126a0cdd11a971107af34d7b619b21ee7b9a459060b40c8c",
+      "label": "imports: rust dependency",
+      "line": 2,
+      "relation": "imports",
+      "sources": [
+        "source:beacon:api/src/main.rs"
+      ],
+      "to": "package:rust:serde"
+    },
+    {
+      "evidence": "config",
+      "family": "imports",
+      "from": "file:beacon:api/src/main.rs",
+      "id": "f145f958c44d6b278fc33af35dd11dd87f2da9ba4999cf5dde2d130bd42ee6a2",
+      "label": "Static Rust use/mod declaration; cfg conditions not evaluated",
+      "line": 1,
+      "relation": "imports",
+      "sources": [
+        "source:beacon:api/src/main.rs"
+      ],
+      "to": "file:beacon:api/src/orders.rs"
+    },
+    {
+      "evidence": "config",
+      "family": "imports",
+      "from": "file:beacon:web/src/app.ts",
+      "id": "fc040c1cc38476f74b1079e2435f7bfa5d005f60db7e3e989c92f49754e8f241",
+      "label": "imports: node dependency",
+      "line": 2,
+      "relation": "imports",
+      "sources": [
+        "source:beacon:web/src/app.ts"
+      ],
+      "to": "package:npm:react"
+    }
+  ],
+  "entities": [
+    {
+      "category": "code",
+      "details": [],
+      "entity_kind": "source_file",
+      "id": "file:beacon:api/src/main.rs",
+      "label": "api/src/main.rs",
+      "members": [],
+      "path": "api/src/main.rs",
+      "repo": "beacon",
+      "sources": [
+        "source:beacon:api/src/main.rs"
+      ],
+      "status": "configured",
+      "summary": "Declared in source/configuration; installed and runtime state were not probed."
+    },
+    {
+      "category": "code",
+      "details": [],
+      "entity_kind": "source_file",
+      "id": "file:beacon:api/src/orders.rs",
+      "label": "api/src/orders.rs",
+      "members": [],
+      "path": "api/src/orders.rs",
+      "repo": "beacon",
+      "sources": [
+        "source:beacon:api/src/orders.rs"
+      ],
+      "status": "configured",
+      "summary": "Declared in source/configuration; installed and runtime state were not probed."
+    },
+    {
+      "category": "code",
+      "details": [],
+      "entity_kind": "source_file",
+      "id": "file:beacon:web/src/app.ts",
+      "label": "web/src/app.ts",
+      "members": [],
+      "path": "web/src/app.ts",
+      "repo": "beacon",
+      "sources": [
+        "source:beacon:web/src/app.ts"
+      ],
+      "status": "configured",
+      "summary": "Declared in source/configuration; installed and runtime state were not probed."
+    },
+    {
+      "category": "code",
+      "details": [],
+      "entity_kind": "source_file",
+      "id": "file:beacon:web/src/client.ts",
+      "label": "web/src/client.ts",
+      "members": [],
+      "path": "web/src/client.ts",
+      "repo": "beacon",
+      "sources": [
+        "source:beacon:web/src/client.ts"
+      ],
+      "status": "configured",
+      "summary": "Declared in source/configuration; installed and runtime state were not probed."
+    },
+    {
+      "category": "packages",
+      "details": [],
+      "entity_kind": "package",
+      "id": "package:npm:react",
+      "label": "react",
+      "members": [],
+      "path": null,
+      "repo": null,
+      "sources": [
+        "source:beacon:web/package.json",
+        "source:beacon:web/src/app.ts"
+      ],
+      "status": "configured",
+      "summary": "Declared in source/configuration; installed and runtime state were not probed."
+    },
+    {
+      "category": "packages",
+      "details": [],
+      "entity_kind": "package",
+      "id": "package:rust:serde",
+      "label": "serde",
+      "members": [],
+      "path": null,
+      "repo": null,
+      "sources": [
+        "source:beacon:api/Cargo.toml",
+        "source:beacon:api/src/main.rs"
+      ],
+      "status": "configured",
+      "summary": "Declared in source/configuration; installed and runtime state were not probed."
+    },
+    {
+      "category": "context",
+      "details": [],
+      "entity_kind": "repository",
+      "id": "repo:beacon",
+      "label": "beacon",
+      "members": [],
+      "path": null,
+      "repo": "beacon",
+      "sources": [
+        "source:beacon:git"
+      ],
+      "status": "configured",
+      "summary": "Declared in source/configuration; installed and runtime state were not probed."
+    }
+  ],
+  "revision": "6064887efabaa2b867a236caa016c84169ebaa458bf824a28156cfd176a69cb5",
+  "scope": "repo:beacon"
+}

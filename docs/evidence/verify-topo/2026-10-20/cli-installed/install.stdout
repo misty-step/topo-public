@@ -1,0 +1,9 @@
+topo 0.4.0 (2e892f9a1ccf4ec1352e19552ae2629a8a4e0d32)
+
+Installed ~/.cache/tmp/verify-topo/public-20261020/bin/topo
+Add it to your shell PATH:
+  export PATH="~/.cache/tmp/verify-topo/public-20261020/bin:$PATH"
+
+In a Git repository:
+  topo run --repo app=. --out topo-map
+Then open topo-map/index.html.

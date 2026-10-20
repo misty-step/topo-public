@@ -1,0 +1,28 @@
+{
+  "collections": [
+    {
+      "coverage": "partial",
+      "dirty": false,
+      "enumerated_files": 6,
+      "errors": [],
+      "head": "10e9e0b15d9dff7253d99f9fc2f7a278f9b6f2c6",
+      "id": "collection:beacon",
+      "label": "beacon",
+      "limits": [
+        "Read-only source collection; no installs, tests, application execution, provider reads or model calls.",
+        "Only Rust, Go, JS/TS static imports and Cargo/npm/Go declarations. Runtime bindings, scripts, aliases, conditional execution and call graphs need separate evidence.",
+        "Secrets/ignored/generated paths excluded; symlinks never followed. Per-file hashes identify observed bytes; a dirty worktree is not HEAD's content.",
+        "Repository identity uses the explicit caller namespace; rename/native-provider identity is not established.",
+        "Directory scopes, not complete semantic/symbol extraction. Go workspaces/nested manifests, Cargo target/workspace dependency tables, JS path-alias configs and dynamic dependencies need additional resolution.",
+        "Budgets: 2,000 supported files, 1 MiB per file, 16 MiB total source bytes. A skipped path remains unknown."
+      ],
+      "read_files": 6
+    }
+  ],
+  "entities": 9,
+  "output": "~/.cache/tmp/verify-topo/public-source/map",
+  "relationships": 6,
+  "revision": "6064887efabaa2b867a236caa016c84169ebaa458bf824a28156cfd176a69cb5",
+  "scopes": 6,
+  "sources": 7
+}

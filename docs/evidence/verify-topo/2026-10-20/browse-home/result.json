@@ -1,0 +1,59 @@
+{
+  "mode": "home",
+  "target": "~/.cache/tmp/verify-topo/public-20261020/home/index.html",
+  "startedAt": "2026-10-20T21:57:03.898Z",
+  "checks": [
+    {
+      "name": "home-desktop: title is Topo",
+      "ok": true,
+      "detail": "Topo"
+    },
+    {
+      "name": "home-desktop: Projects destination present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "home-desktop: Repos coverage reads Partial",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "home-desktop: Projects page opens from disk",
+      "ok": true,
+      "detail": "projects"
+    },
+    {
+      "name": "home-desktop: Topo link returns home",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "home-desktop: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "home-phone: title is Topo",
+      "ok": true,
+      "detail": "Topo"
+    },
+    {
+      "name": "home-phone: Projects destination present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "home-phone: Repos coverage reads Partial",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "home-phone: no page errors",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "finishedAt": "2026-10-20T21:57:04.372Z",
+  "ok": true
+}

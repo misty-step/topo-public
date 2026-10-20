@@ -1,0 +1,131 @@
+- banner:
+  - tablist "Views":
+    - tab "1 Map" [selected]
+    - tab "2 Inventory"
+    - tab "3 Directions"
+    - tab "4 Evidence"
+  - heading "Topo / demo workspace" [level=1]
+  - text: Demo 2026-10-08, 43 nodes, 69 relationships
+  - link "Review":
+    - /url: ../
+  - button "Fullscreen"
+  - button "Keys"
+- main:
+  - tabpanel "1 Map":
+    - group "Map filters":
+      - text: Search nodes
+      - searchbox "Search nodes"
+      - group "Node kinds":
+        - button "Products 8" [pressed]
+        - button "Providers 27" [pressed]
+        - button "Tools 5" [pressed]
+        - button "Domains 3" [pressed]
+      - group "Status":
+        - button "configured 39" [pressed]
+        - button "unknown 4" [pressed]
+      - text: Category
+      - combobox "Category":
+        - option "All categories" [selected]
+        - option "Compute (3)"
+        - option "Data (6)"
+        - option "Identity (3)"
+        - option "Communication (3)"
+        - option "Delivery (5)"
+        - option "Observability (3)"
+        - option "AI (4)"
+        - option "Business (3)"
+        - option "Domain (5)"
+      - button "Focus"
+      - group "Zoom":
+        - button "Zoom out": −
+        - button "Fit"
+        - button "Zoom in": +
+      - button "Reset"
+    - group "Infrastructure map":
+      - button "docs.beacon.example. Domain, domain, configured. 2 relationships." [pressed]: docs.beacon.example
+      - button "api.beacon.example. Domain, domain, configured. 2 relationships.": api.beacon.example
+      - button "portal.beacon.example. Domain, domain, configured. 2 relationships.": portal.beacon.example
+      - button "Cloudflare DNS. Provider, domain, configured. 4 relationships.": Cloudflare DNS
+      - button "Domain registrar. Provider, domain, unknown. 1 relationship.": Domain registrar
+      - button "Release artifacts. Provider, delivery, configured. 2 relationships.": Release artifacts
+      - button "Build pipeline. Tool, delivery, configured. 3 relationships.": Build pipeline
+      - button "Source forge. Provider, delivery, configured. 4 relationships.": Source forge
+      - button "Investigation agent. Tool, delivery, configured. 2 relationships.": Investigation agent
+      - button "Scoped collector. Tool, delivery, configured. 1 relationship.": Scoped collector
+      - button "Mail delivery. Provider, communication, configured. 3 relationships.": Mail delivery
+      - button "Support workspace. Provider, communication, unknown. 1 relationship.": Support workspace
+      - button "Incident notices. Provider, communication, configured. 1 relationship.": Incident notices
+      - button "Payment vendor. Provider, business, configured. 1 relationship.": Payment vendor
+      - button "Customer records. Provider, business, configured. 1 relationship.": Customer records
+      - button "Scheduling vendor. Provider, business, configured. 1 relationship.": Scheduling vendor
+      - button "Lantern docs. Product, compute, configured. 7 relationships.": Lantern docs
+      - button "Relay ingest. Product, compute, configured. 6 relationships.": Relay ingest
+      - button "Dispatch jobs. Product, compute, configured. 6 relationships.": Dispatch jobs
+      - button "Quarry search. Product, data, configured. 7 relationships.": Quarry search
+      - button "Beacon API. Product, compute, configured. 8 relationships.": Beacon API
+      - button "Ledger billing. Product, data, configured. 8 relationships.": Ledger billing
+      - button "Compass portal. Product, compute, configured. 8 relationships.": Compass portal
+      - button "Topo workspace. Product, compute, configured. 12 relationships.": Topo workspace
+      - button "Legacy Linux host. Provider, compute, configured. 1 relationship.": Legacy Linux host
+      - button "Cloudflare Queues. Provider, compute, configured. 3 relationships.": Cloudflare Queues
+      - button "Cloudflare Workers. Provider, compute, configured. 7 relationships.": Cloudflare Workers
+      - button "R2 evidence store. Provider, data, configured. 5 relationships.": R2 evidence store
+      - button "KV cache. Provider, data, configured. 1 relationship.": KV cache
+      - button "Search index. Provider, data, configured. 1 relationship.": Search index
+      - button "PostgreSQL. Provider, data, configured. 4 relationships.": PostgreSQL
+      - button "D1 evidence ledger. Provider, data, configured. 1 relationship.": D1 evidence ledger
+      - button "Off-host backup. Provider, data, unknown. 2 relationships.": Off-host backup
+      - button "Signing authority. Tool, identity, configured. 2 relationships.": Signing authority
+      - button "OIDC identity. Provider, identity, configured. 3 relationships.": OIDC identity
+      - button "Cloudflare Access. Provider, identity, configured. 1 relationship.": Cloudflare Access
+      - button "Telemetry collector. Tool, observability, configured. 2 relationships.": Telemetry collector
+      - button "Product analytics. Provider, observability, configured. 2 relationships.": Product analytics
+      - button "Error reporting. Provider, observability, configured. 3 relationships.": Error reporting
+      - button "Generative model. Provider, AI, configured. 2 relationships.": Generative model
+      - button "Clef / candidate. Provider, AI, unknown. 1 relationship.": Clef / candidate
+      - button "Jev / typed judgments. Provider, AI, configured. 2 relationships.": Jev / typed judgments
+      - button "OpenRouter Decisions. Provider, AI, configured. 2 relationships.": OpenRouter Decisions
+    - paragraph: Arrow keys move between nodes. Enter shows details. F focuses the neighborhood. Escape clears.
+    - group "Relationship legend and filters":
+      - button "hosting 8" [pressed]
+      - button "data 15" [pressed]
+      - button "auth 6" [pressed]
+      - button "inference 6" [pressed]
+      - button "communication 6" [pressed]
+      - button "monitoring 7" [pressed]
+      - button "delivery 14" [pressed]
+      - button "dns 7" [pressed]
+      - button "provider read 0" [disabled] [pressed]
+      - button "documentary 66" [pressed]
+      - button "inferred 3" [pressed]
+  - complementary "Details":
+    - heading "docs.beacon.example" [level=2]
+    - text: Domain, domain
+    - button "Close"
+    - paragraph: Reserved example domain for the fictional documentation surface.
+    - term: Status
+    - definition: Configured
+    - term: Owner
+    - definition: Example team
+    - term: Cost
+    - definition: Unknown; fictional workspace
+    - term: Repos
+    - definition: None recorded
+    - term: Used by
+    - definition: 1 product
+    - term: Sources
+    - definition:
+      - text: config
+      - button "Fictional topology fixture"
+    - heading "Relationships (2)" [level=3]
+    - text: dns to
+    - button "Cloudflare DNS"
+    - text: documentary (config) Authority / route to
+    - button "Lantern docs"
+    - text: documentary (config) Authority / route
+    - heading "Details" [level=3]
+    - list:
+      - listitem: Fictional fixture, not observed infrastructure.
+    - button "Focus neighborhood"
+    - button "Show in inventory"
+- text: docs.beacon.example selected. 2 relationships.

@@ -1,0 +1,108 @@
+{
+  "entity": {
+    "category": "code",
+    "details": [],
+    "entity_kind": "source_file",
+    "id": "file:beacon:web/src/app.ts",
+    "label": "web/src/app.ts",
+    "members": [],
+    "path": "web/src/app.ts",
+    "repo": "beacon",
+    "sources": [
+      "source:beacon:web/src/app.ts"
+    ],
+    "status": "configured",
+    "summary": "Declared in source/configuration; installed and runtime state were not probed."
+  },
+  "neighbors": [
+    {
+      "category": "code",
+      "details": [],
+      "entity_kind": "source_file",
+      "id": "file:beacon:web/src/app.ts",
+      "label": "web/src/app.ts",
+      "members": [],
+      "path": "web/src/app.ts",
+      "repo": "beacon",
+      "sources": [
+        "source:beacon:web/src/app.ts"
+      ],
+      "status": "configured",
+      "summary": "Declared in source/configuration; installed and runtime state were not probed."
+    },
+    {
+      "category": "code",
+      "details": [],
+      "entity_kind": "source_file",
+      "id": "file:beacon:web/src/client.ts",
+      "label": "web/src/client.ts",
+      "members": [],
+      "path": "web/src/client.ts",
+      "repo": "beacon",
+      "sources": [
+        "source:beacon:web/src/client.ts"
+      ],
+      "status": "configured",
+      "summary": "Declared in source/configuration; installed and runtime state were not probed."
+    },
+    {
+      "category": "packages",
+      "details": [],
+      "entity_kind": "package",
+      "id": "package:npm:react",
+      "label": "react",
+      "members": [],
+      "path": null,
+      "repo": null,
+      "sources": [
+        "source:beacon:web/package.json",
+        "source:beacon:web/src/app.ts"
+      ],
+      "status": "configured",
+      "summary": "Declared in source/configuration; installed and runtime state were not probed."
+    }
+  ],
+  "relationships": [
+    {
+      "evidence": "config",
+      "family": "imports",
+      "from": "file:beacon:web/src/app.ts",
+      "id": "74153e0e94c574c6e6ff5789f5afd8eeeb2e9369b450d11b82ff7efe0be28d36",
+      "label": "Static typescript import",
+      "line": 1,
+      "relation": "imports",
+      "sources": [
+        "source:beacon:web/src/app.ts"
+      ],
+      "to": "file:beacon:web/src/client.ts"
+    },
+    {
+      "evidence": "config",
+      "family": "imports",
+      "from": "file:beacon:web/src/app.ts",
+      "id": "fc040c1cc38476f74b1079e2435f7bfa5d005f60db7e3e989c92f49754e8f241",
+      "label": "imports: node dependency",
+      "line": 2,
+      "relation": "imports",
+      "sources": [
+        "source:beacon:web/src/app.ts"
+      ],
+      "to": "package:npm:react"
+    }
+  ],
+  "revision": "f68196b3a92a1844df65a7510e12b32cd862cd07e8ec404b374c11d0dc0cc93b",
+  "scope": null,
+  "sources": [
+    {
+      "date": "2026-10-20T21:57:20Z",
+      "head": "542187fb1266a2f0c3df0fb7af705fd814777ccf",
+      "id": "source:beacon:web/src/app.ts",
+      "label": "beacon/web/src/app.ts",
+      "level": "config",
+      "path": "web/src/app.ts",
+      "repo": "beacon",
+      "result": "Static source/config declaration; not installed or runtime proof. No source body exported.",
+      "sha256": "35d888baeee6eb2482f093008735a66eb9890c24b020590f2918e0810888809b"
+    }
+  ]
+}

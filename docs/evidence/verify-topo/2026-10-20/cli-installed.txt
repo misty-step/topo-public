@@ -1,0 +1,24 @@
+PASS cli install
+PASS cli install-again-refused refused (exit 1): Already exists: ~/.cache/tmp/verify-topo/public-20261020/bin/topo. Use --force to explicitly replace it, or
+PASS cli version
+PASS cli run
+PASS cli run wrote index.html, graph.json, manifest.json
+PASS cli run found the react and serde declarations
+PASS cli commented import ignored
+PASS cli ignored .env stays out of the map
+PASS cli scopes
+PASS cli scopes lists repo and module scopes
+PASS cli query-entity
+PASS cli query returns app.ts -> client.ts
+PASS cli query-revision
+PASS cli render
+PASS cli render keeps revision f68196b3a92a1844df65a7510e12b32cd862cd07e8ec404b374c11d0dc0cc93b
+PASS cli state
+PASS cli existing-output refused (exit 1): topo: Output already exists; use a fresh run directory
+PASS cli unknown-scope refused (exit 1): topo: Unknown scope
+PASS cli wrong-revision refused (exit 1): topo: Graph revision mismatch
+PASS cli not-a-repo refused (exit 1): topo: Git rev-parse failed; no absence established
+PASS cli empty-repo refused (exit 1): topo: Git rev-parse failed; no absence established
+PASS cli bad-namespace refused (exit 1): topo: Invalid caller namespace
+PASS cli tampered-graph refused (exit 1): topo: Graph revision does not match its content
+evidence: ~/.cache/tmp/verify-topo/public-20261020/evidence

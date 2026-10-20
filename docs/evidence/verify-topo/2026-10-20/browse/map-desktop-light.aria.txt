@@ -1,0 +1,62 @@
+- banner:
+  - tablist "Views":
+    - tab "1 Map" [selected]
+    - tab "2 Inventory"
+    - tab "3 Directions"
+    - tab "4 Evidence"
+  - text: Map scope
+  - combobox "Map scope":
+    - option "Project · selected repositories" [selected]
+    - option "Module · beacon / api"
+    - option "Module · beacon / api/src"
+    - option "Module · beacon / web"
+    - option "Module · beacon / web/src"
+    - option "Repo · beacon"
+  - text: Read-only 2026-10-20T21:57:02Z, 3 nodes, 4 relationships
+  - link "Review":
+    - /url: index.html
+  - button "Exit fullscreen" [pressed]
+  - button "Keys"
+- main:
+  - tabpanel "1 Map":
+    - group "Map filters":
+      - text: Search nodes
+      - searchbox "Search nodes"
+      - group "Node kinds":
+        - button "Focus 1" [pressed]
+        - button "Dependencies 2" [pressed]
+      - group "Status":
+        - button "configured 3" [pressed]
+      - text: Category
+      - combobox "Category":
+        - option "All categories" [selected]
+        - option "Packages (2)"
+      - button "Focus" [disabled]
+      - group "Zoom":
+        - button "Zoom out": −
+        - button "Fit"
+        - button "Zoom in": +
+      - button "Reset"
+    - group "Infrastructure map":
+      - button "beacon. repository, compute, configured. 4 relationships.": beacon
+      - button "npm packages · 1. aggregate, packages, configured. 2 relationships.": npm packages · 1
+      - button "Rust crates · 1. aggregate, packages, configured. 2 relationships.": Rust crates · 1
+    - paragraph: Arrow keys move between nodes. Enter shows details. F focuses the neighborhood. Escape clears.
+    - group "Relationship legend and filters":
+      - button "imports 2" [pressed]
+      - button "declares 2" [pressed]
+      - button "provider read 0" [disabled] [pressed]
+      - button "documentary 4" [pressed]
+      - button "inferred 0" [disabled] [pressed]
+  - complementary "Details":
+    - heading "Overview" [level=2]
+    - text: Generated 2026-10-20T21:57:02Z
+    - region "Evidence inspector":
+      - paragraph: Selected repositories · 3 visible entities/groups from 9 underlying entities; 4 projected relationships from 6 exact edges. Source-only declarations and dated imports, not live health. Graph 0e052cc47a20.
+      - text: Focus 1 Dependencies 2 Relationships 4 Provider, documentary, inferred 0, 4, 0 Sources 5 Open gaps 6
+      - heading "Reading the map" [level=3]
+      - list:
+        - listitem: Focal files, groups or repositories sit in the center. Context is left; dependencies are right. Column position does not determine edge direction.
+        - listitem: "Line color is the relationship type. Solid lines are positive provider proof from a successful API, CLI or DNS read. Dotted lines are documentary: repository source or config, docs, pricing, or a record of a failed or unattributed probe. Dashed lines are inferred. No line style shows traffic or service health."
+        - listitem: "The square on each node is its status: filled for a live observation in a provider or DNS read (not necessarily a passing product journey), outlined when only configured, a dash when historical, dotted when unknown."
+        - listitem: Select a node for its owner, cost, repos, status and sources.

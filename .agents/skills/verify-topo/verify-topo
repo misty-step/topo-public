@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+# verify-topo: drive Topo the way its users do and keep the evidence.
+# Usage: .agents/skills/verify-topo/verify-topo <command> [options]
+#   setup                      install locked JS deps and Playwright Chromium
+#   doctor [--live]            read-only health; --live adds Access/owner/private checks
+#   cli [--source]             install from the public site (or build this checkout), collect, query, render, state
+#   browse                     drive the exported map and a composed home from disk
+#   site [BASE_URL]            drive the public site (default https://topo.mistystep.io)
+#   sign-in [--headed] [--password-env NAME]   owner session on the private maps host
+#   all [--source]             doctor, cli, browse, site, then sign-in
+#   cleanup [--profile]        remove run scratch; evidence stays; --profile also drops the owner browser profile
+# Environment:
+#   TOPO_VERIFY_RUN             run directory (default ~/.cache/tmp/verify-topo/default); use one per concurrent run
+#   TOPO_VERIFY_PUBLIC          public site (default https://topo.mistystep.io)
+#   TOPO_VERIFY_PRIVATE_SETTINGS operator's private deployment settings JSON (docs/deployment.md); enables private checks
+#   TOPO_VERIFY_OWNER_EMAIL     the private deployment's owner identity; required for sign-in
+#   CLOUDFLARE_API_TOKEN, TOPO_MAPS_ACCESS_CREDENTIAL  only for doctor --live (inject from your secret manager)
+set -uo pipefail
+
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+repo=$(cd "$here/../../.." && pwd)
+run=${TOPO_VERIFY_RUN:-$HOME/.cache/tmp/verify-topo/default}
+evidence=$run/evidence
+public=${TOPO_VERIFY_PUBLIC:-https://topo.mistystep.io}
+settings=${TOPO_VERIFY_PRIVATE_SETTINGS:-}
+private='' account='' team='' audience=''
+if [[ -n $settings ]]; then
+  [[ -r $settings ]] || { printf 'FAIL TOPO_VERIFY_PRIVATE_SETTINGS is not readable: %s\n' "$settings"; exit 1; }
+  private=https://$(jq -r '.vars.PRIVATE_HOST // empty' "$settings")
+  account=$(jq -r '.account_id // empty' "$settings")
+  team=$(jq -r '.vars.ACCESS_TEAM_DOMAIN // empty' "$settings")
+  audience=$(jq -r '.vars.ACCESS_AUD // empty' "$settings")
+fi
+owner=${TOPO_VERIFY_OWNER_EMAIL:-}
+export TOPO_VERIFY_REPO=$repo TOPO_VERIFY_OWNER_EMAIL=$owner
+failures=0
+
+say() { printf '%s\n' "$*"; }
+pass() { say "PASS $*"; }
+fail() { say "FAIL $*"; failures=$((failures + 1)); }
+skip() { say "SKIP $*"; }
+browser() { (cd "$repo" && node "$here/browser.mjs" "$@"); }
+
+cmd_setup() {
+  (cd "$repo" && bun install --frozen-lockfile && bunx --no-install playwright install chromium)
+}
+
+cmd_doctor() {
+  local live=false; [[ ${1:-} == --live ]] && live=true
+  for tool in git curl jq node bun; do
+    command -v "$tool" >/dev/null && pass "tool $tool" || fail "tool $tool missing"
+  done
+  [[ -d $repo/node_modules/playwright ]] && pass "playwright installed in $repo" || fail "playwright missing: run verify-topo setup"
+  say "INFO checkout $(git -C "$repo" rev-parse HEAD) on $(git -C "$repo" branch --show-current)"
+  local health manifest
+  health=$(curl -fsS "$public/health") && manifest=$(curl -fsS "$public/manifest.json") || { fail "public site unreachable: $public"; health='{}'; manifest='{}'; }
+  local hs ms
+  hs=$(jq -r .source <<<"$health"); ms=$(jq -r .source_revision <<<"$manifest")
+  [[ $(jq -r .status <<<"$health") == ok && $hs == "$ms" ]] && pass "public /health ok, source $hs, native $(jq -r .native_version <<<"$manifest")" || fail "public /health ($hs) disagrees with manifest ($ms)"
+  if git -C "$repo" merge-base --is-ancestor "$hs" HEAD 2>/dev/null; then pass "deployed source $hs is in this checkout's history"
+  else say "INFO deployed source $hs is not an ancestor of this checkout (unmerged or newer deploy)"; fi
+  if [[ -z $private ]]; then skip "private deployment (n/a: set TOPO_VERIFY_PRIVATE_SETTINGS to your settings JSON)"; return; fi
+  local loc
+  loc=$(curl -s -o /dev/null -w '%{redirect_url}' "$private/")
+  [[ -n $team && $loc == "$team"/* ]] && pass "private host sends anonymous visitors to its Access team" || fail "private host did not redirect to ACCESS_TEAM_DOMAIN: ${loc:-no redirect}"
+  if ! $live; then skip "owner identity and private bundle (run: doctor --live with credentials injected)"; return; fi
+  [[ -n $owner ]] || fail "TOPO_VERIFY_OWNER_EMAIL not set"
+  if [[ -z ${CLOUDFLARE_API_TOKEN:-} ]]; then fail "CLOUDFLARE_API_TOKEN not injected"; else
+    local apps app idps
+    apps=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$account/access/apps?per_page=100") || apps='{}'
+    app=$(jq -c --arg d "${private#https://}" '[.result[]? | select(.domain == $d)][0] // {}' <<<"$apps")
+    [[ -n $audience && $(jq -r '.aud // empty' <<<"$app") == "$audience" ]] \
+      && pass "Access app audience matches ACCESS_AUD in the settings" || fail "Access app for ${private#https://} missing or audience differs from ACCESS_AUD"
+    jq -e --arg e "$owner" '[.policies[]? | select(.decision == "allow") | .include[]? | .email.email] | index($e)' <<<"$app" >/dev/null \
+      && pass "Access allow policy includes owner $owner" || fail "Access allow policy does not include owner $owner"
+    idps=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$account/access/identity_providers") || idps='{}'
+    local allowed
+    allowed=$(jq -r --argjson ids "$(jq -c '.allowed_idps // []' <<<"$app")" '[.result[]? | select(.id as $i | $ids | index($i)) | "\(.name) (\(.type))"] | join(", ")' <<<"$idps")
+    if [[ -n ${TOPO_VERIFY_OWNER_IDP_TYPE:-} ]]; then
+      [[ $allowed == *"($TOPO_VERIFY_OWNER_IDP_TYPE)"* ]] && pass "owner login method: $allowed" || fail "owner login method is not $TOPO_VERIFY_OWNER_IDP_TYPE: ${allowed:-none}"
+    else [[ -n $allowed ]] && pass "owner login methods: $allowed" || fail "Access app allows no login method"; fi
+    local last
+    last=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$account/access/logs/access_requests?limit=1000&direction=desc&email=$owner" \
+      | jq -r --arg d "${private#https://}" '[.result[]? | select(.app_domain == $d)][0] | if . then "\(.created_at) allowed=\(.allowed) via \(.connection)" else "none in retained log" end')
+    say "INFO last owner login to ${private#https://}: $last (passive signal only; not agent proof)"
+  fi
+  if [[ -z ${TOPO_MAPS_ACCESS_CREDENTIAL:-} ]]; then fail "TOPO_MAPS_ACCESS_CREDENTIAL not injected"; else
+    local id secret body
+    id=$(jq -r .client_id <<<"$TOPO_MAPS_ACCESS_CREDENTIAL"); secret=$(jq -r .client_secret <<<"$TOPO_MAPS_ACCESS_CREDENTIAL")
+    body=$(curl -fsS -H "CF-Access-Client-Id: $id" -H "CF-Access-Client-Secret: $secret" "$private/manifest.json") || body='{}'
+    [[ $(jq -r .schema <<<"$body") == topo.home.v1 ]] \
+      && pass "private bundle serves to the publishing service token: generated $(jq -r .generated_at <<<"$body"), source $(jq -r .source_revision <<<"$body") (not owner proof)" \
+      || fail "private manifest unreadable with the publishing service token"
+  fi
+}
+
+fixture() {
+  local f=$run/fixture
+  rm -rf "$f"; mkdir -p "$f/web/src" "$f/api/src"
+  printf '{"name":"beacon-web","version":"1.0.0","dependencies":{"react":"19.0.0"}}\n' > "$f/web/package.json"
+  printf 'import { fetchOrders } from "./client";\nimport React from "react";\n// import { ghost } from "./ghost";\nexport const App = () => fetchOrders();\n' > "$f/web/src/app.ts"
+  printf 'export function fetchOrders() { return fetch("/api/orders"); }\n' > "$f/web/src/client.ts"
+  printf '[package]\nname = "beacon-api"\nversion = "0.1.0"\nedition = "2021"\n[dependencies]\nserde = "1"\n' > "$f/api/Cargo.toml"
+  printf 'mod orders;\nuse serde::Serialize;\nfn main() { orders::list(); }\n' > "$f/api/src/main.rs"
+  printf 'pub fn list() {}\n' > "$f/api/src/orders.rs"
+  printf 'API_KEY=fixture-not-a-secret\n' > "$f/.env"
+  printf '.env\n' > "$f/.gitignore"
+  git -C "$f" init -q -b main
+  git -C "$f" add -A
+  git -C "$f" -c user.name=Fixture -c user.email=fixture@example.test commit -qm 'fictional beacon fixture'
+  rm -rf "${run:?}/empty-repo" "$run/not-a-repo" "${run:?}"/out-*
+  mkdir -p "$run/empty-repo" "$run/not-a-repo" && git -C "$run/empty-repo" init -q -b main
+}
+
+# step NAME EXPECT(0|nonzero) -- command...: records command, exit, stdout and stderr in the transcript.
+step() {
+  local name=$1 expect=$2; shift 3
+  local out=$evidence/cli/$name
+  (cd "$run" && "$@" > "$out.stdout" 2> "$out.stderr"); local code=$?
+  { printf '$ %s\n' "$*"; printf 'exit %s\n' "$code"; sed 's/^/stdout: /' "$out.stdout" | head -12; sed 's/^/stderr: /' "$out.stderr"; echo; } >> "$evidence/cli/transcript.txt"
+  if [[ $expect == 0 ]]; then [[ $code == 0 ]] && pass "cli $name" || fail "cli $name exited $code: $(head -c 200 "$out.stderr")"
+  else [[ $code != 0 ]] && pass "cli $name refused (exit $code): $(head -c 120 "$out.stderr")" || fail "cli $name should have failed"; fi
+  return 0
+}
+
+cmd_cli() {
+  mkdir -p "$evidence/cli"; : > "$evidence/cli/transcript.txt"
+  local topo
+  if [[ ${1:-} == --source ]]; then
+    (cd "$repo" && cargo build --locked -j 2 --bin topo --bin topo-home) || { fail "cargo build"; return; }
+    topo=$repo/target/debug/topo
+    say "INFO driving the source build of this checkout"
+  else
+    rm -rf "${run:?}/bin"; mkdir -p "$run/bin"
+    curl -fsSL "$public/install.sh" -o "$run/install-topo.sh" || { fail "download install.sh"; return; }
+    step install 0 -- env TOPO_INSTALL_DIR="$run/bin" sh "$run/install-topo.sh"
+    step install-again-refused nonzero -- env TOPO_INSTALL_DIR="$run/bin" sh "$run/install-topo.sh"
+    topo=$run/bin/topo
+  fi
+  fixture
+  rm -rf "${run:?}/map" "$run/rendered" "$run/state-out"
+  step version 0 -- "$topo" --version
+  step run 0 -- "$topo" run --repo beacon="$run/fixture" --out "$run/map"
+  [[ -f $run/map/index.html && -f $run/map/graph.json && -f $run/map/manifest.json ]] && pass "cli run wrote index.html, graph.json, manifest.json" || fail "cli run output files missing"
+  jq -e '.entities | has("package:npm:react") and has("package:rust:serde")' "$run/map/graph.json" >/dev/null && pass "cli run found the react and serde declarations" || fail "cli run missed package:npm:react or package:rust:serde"
+  grep -q 'ghost' "$run/map/graph.json" && fail "commented import created an entity" || pass "cli commented import ignored"
+  grep -q 'fixture-not-a-secret' "$run/map/graph.json" "$run/map/index.html" && fail "ignored .env content leaked into the map" || pass "cli ignored .env stays out of the map"
+  step scopes 0 -- "$topo" scopes --graph "$run/map/graph.json"
+  jq -e 'has("repo:beacon") and has("module:beacon:web/src")' "$evidence/cli/scopes.stdout" >/dev/null && pass "cli scopes lists repo and module scopes" || fail "cli scopes missing expected IDs"
+  step query-entity 0 -- "$topo" query --graph "$run/map/graph.json" --entity file:beacon:web/src/app.ts --direction dependencies
+  jq -e '[.relationships[].to] | index("file:beacon:web/src/client.ts")' "$evidence/cli/query-entity.stdout" >/dev/null && pass "cli query returns app.ts -> client.ts" || fail "cli query missing app.ts -> client.ts"
+  local rev; rev=$(jq -r .revision "$run/map/manifest.json")
+  step query-revision 0 -- "$topo" query --graph "$run/map/graph.json" --scope repo:beacon --revision "$rev"
+  step render 0 -- "$topo" render --graph "$run/map/graph.json" --out "$run/rendered"
+  [[ $(jq -r .revision "$run/rendered/manifest.json") == "$rev" ]] && pass "cli render keeps revision $rev" || fail "cli render changed the revision"
+  cat > "$run/state.json" <<'JSON'
+{"schema":"topo.project-state.v1","collected_at":"2026-10-20T00:00:00Z","inventory_basis":"Fictional verify-topo inventory","option_basis":"Fictional hosting option; not current placement","coverage":"One fictional repository created by verify-topo","gaps":["Fictional fixture; no provider survey"],
+"projects":[{"name":"example/beacon","purpose":"Fictional order service used by verify-topo","purpose_source":"fixture","activity":{"date":"2026-10-20","commit":null,"subject":"fictional beacon fixture","source":"fixture git log"},"runtime":[{"status":"unknown","home":"No confirmed deployment","date":"2026-10-20","source":"Fictional fixture"}],"call":"maintain","reason":"Fixture only"}]}
+JSON
+  step state 0 -- "$topo" state --input "$run/state.json" --out "$run/state-out"
+  # States that break: each must fail loudly, never return an empty success.
+  step existing-output nonzero -- "$topo" run --repo beacon="$run/fixture" --out "$run/map"
+  step unknown-scope nonzero -- "$topo" query --graph "$run/map/graph.json" --scope module:beacon:nope
+  step wrong-revision nonzero -- "$topo" query --graph "$run/map/graph.json" --revision 0000
+  step not-a-repo nonzero -- "$topo" run --repo x="$run/not-a-repo" --out "$run/out-not-a-repo"
+  step empty-repo nonzero -- "$topo" run --repo x="$run/empty-repo" --out "$run/out-empty-repo"
+  step bad-namespace nonzero -- "$topo" run --repo ../x="$run/fixture" --out "$run/out-bad-namespace"
+  jq '.entities["package:npm:react"].label = "preact"' "$run/map/graph.json" > "$run/tampered.json"
+  step tampered-graph nonzero -- "$topo" query --graph "$run/tampered.json"
+  printf '%s\n' "$topo" > "$run/topo-path"
+}
+
+cmd_browse() {
+  [[ -f $run/map/index.html ]] || { fail "no exported map: run verify-topo cli first"; return; }
+  browser map "$run/map/index.html" "$evidence/browse" || fail "map drive (see $evidence/browse/result.json)"
+  local home_bin=$repo/target/debug/topo-home
+  [[ -x $home_bin ]] || (cd "$repo" && cargo build --locked -j 2 --bin topo-home) || { fail "build topo-home"; return; }
+  rm -rf "${run:?}/home"
+  "$home_bin" --state "$run/state-out" --maps "$run/map" --out "$run/home" --stale-after-hours 48 > "$evidence/browse/topo-home.stdout" 2>&1 \
+    && pass "topo-home composed a fictional home" || { fail "topo-home: $(cat "$evidence/browse/topo-home.stdout")"; return; }
+  browser home "$run/home/index.html" "$evidence/browse-home" || fail "home drive (see $evidence/browse-home/result.json)"
+}
+
+cmd_site() {
+  browser site "${1:-$public}" "$evidence/site" || fail "site drive (see $evidence/site/result.json)"
+}
+
+cmd_sign_in() {
+  if [[ -z $private || -z $owner ]]; then skip "sign-in (n/a: set TOPO_VERIFY_PRIVATE_SETTINGS and TOPO_VERIFY_OWNER_EMAIL)"; return; fi
+  browser gate "$private/" "$evidence/sign-in" || fail "signed-out gate (see $evidence/sign-in/result.json)"
+  browser owner "$private/" "$evidence/sign-in/owner" "$@"; local code=$?
+  if [[ $code == 2 ]]; then say "UNPROVEN owner sign-in: $(jq -r .unproven "$evidence/sign-in/owner/result.json")"; failures=$((failures + 1))
+  elif [[ $code != 0 ]]; then fail "owner sign-in (see $evidence/sign-in/owner/result.json)"; fi
+}
+
+cmd_cleanup() {
+  [[ -d $run ]] || { say "nothing to clean at $run"; return; }
+  find "$run" -mindepth 1 -maxdepth 1 ! -name evidence -exec rm -rf {} +
+  [[ ${1:-} == --profile ]] && rm -rf "${TOPO_VERIFY_OWNER_PROFILE:-$HOME/.cache/tmp/verify-topo/owner-profile}"
+  say "cleaned $run; evidence kept at $evidence"
+}
+
+command=${1:-}; shift || true
+mkdir -p "$evidence"
+case $command in
+  setup) cmd_setup ;;
+  doctor) cmd_doctor "$@" ;;
+  cli) cmd_cli "$@" ;;
+  browse) cmd_browse ;;
+  site) cmd_site "$@" ;;
+  sign-in) cmd_sign_in "$@" ;;
+  all) cmd_doctor; cmd_cli "$@"; cmd_browse; cmd_site; cmd_sign_in ;;
+  cleanup) cmd_cleanup "$@" ;;
+  *) sed -n '2,/^set -uo/p' "$0" | sed '$d'; exit 64 ;;
+esac
+say "evidence: $evidence"
+[[ $failures == 0 ]] || { say "$failures check(s) did not pass"; exit 1; }

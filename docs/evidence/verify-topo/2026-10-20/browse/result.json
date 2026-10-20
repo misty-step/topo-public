@@ -1,0 +1,199 @@
+{
+  "mode": "map",
+  "target": "~/.cache/tmp/verify-topo/public-20261020/map/index.html",
+  "startedAt": "2026-10-20T21:57:02.597Z",
+  "checks": [
+    {
+      "name": "map-desktop-light: title names Topo",
+      "ok": true,
+      "detail": "Topo · Selected repositories"
+    },
+    {
+      "name": "map-desktop-light: Views tablist",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-light: Map scope lists portfolio, repo and module scopes",
+      "ok": true,
+      "detail": "Project · selected repositories | Module · beacon / api | Module · beacon / api/src | Module · beacon / web | Module · beacon / web/src | Repo · beacon"
+    },
+    {
+      "name": "map-desktop-light: map renders nodes",
+      "ok": true,
+      "detail": "3 nodes"
+    },
+    {
+      "name": "map-desktop-light: selecting a node opens its inspector",
+      "ok": true,
+      "detail": "beacon"
+    },
+    {
+      "name": "map-desktop-light: inspector has no literal null/undefined fragments",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-light: search narrows the map",
+      "ok": true,
+      "detail": "1 match"
+    },
+    {
+      "name": "map-desktop-light: Inventory view lists the nodes",
+      "ok": true,
+      "detail": "3 rows"
+    },
+    {
+      "name": "map-desktop-light: Evidence view opens",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-light: choosing a scope opens its sibling page",
+      "ok": true,
+      "detail": "scope-3903771ca3c2e155.html shows Repo · beacon"
+    },
+    {
+      "name": "map-desktop-light: Fullscreen toggles and Escape returns",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-light: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-light: offline - no network requests",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-dark: title names Topo",
+      "ok": true,
+      "detail": "Topo · Selected repositories"
+    },
+    {
+      "name": "map-desktop-dark: Views tablist",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-dark: Map scope lists portfolio, repo and module scopes",
+      "ok": true,
+      "detail": "Project · selected repositories | Module · beacon / api | Module · beacon / api/src | Module · beacon / web | Module · beacon / web/src | Repo · beacon"
+    },
+    {
+      "name": "map-desktop-dark: map renders nodes",
+      "ok": true,
+      "detail": "3 nodes"
+    },
+    {
+      "name": "map-desktop-dark: selecting a node opens its inspector",
+      "ok": true,
+      "detail": "beacon"
+    },
+    {
+      "name": "map-desktop-dark: inspector has no literal null/undefined fragments",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-dark: search narrows the map",
+      "ok": true,
+      "detail": "1 match"
+    },
+    {
+      "name": "map-desktop-dark: Inventory view lists the nodes",
+      "ok": true,
+      "detail": "3 rows"
+    },
+    {
+      "name": "map-desktop-dark: Evidence view opens",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-dark: choosing a scope opens its sibling page",
+      "ok": true,
+      "detail": "scope-3903771ca3c2e155.html shows Repo · beacon"
+    },
+    {
+      "name": "map-desktop-dark: Fullscreen toggles and Escape returns",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-dark: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-desktop-dark: offline - no network requests",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-phone-light: title names Topo",
+      "ok": true,
+      "detail": "Topo · Selected repositories"
+    },
+    {
+      "name": "map-phone-light: Views tablist",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-phone-light: Map scope lists portfolio, repo and module scopes",
+      "ok": true,
+      "detail": "Project · selected repositories | Module · beacon / api | Module · beacon / api/src | Module · beacon / web | Module · beacon / web/src | Repo · beacon"
+    },
+    {
+      "name": "map-phone-light: map renders nodes",
+      "ok": true,
+      "detail": "3 nodes"
+    },
+    {
+      "name": "map-phone-light: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-phone-light: offline - no network requests",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-phone-dark: title names Topo",
+      "ok": true,
+      "detail": "Topo · Selected repositories"
+    },
+    {
+      "name": "map-phone-dark: Views tablist",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-phone-dark: Map scope lists portfolio, repo and module scopes",
+      "ok": true,
+      "detail": "Project · selected repositories | Module · beacon / api | Module · beacon / api/src | Module · beacon / web | Module · beacon / web/src | Repo · beacon"
+    },
+    {
+      "name": "map-phone-dark: map renders nodes",
+      "ok": true,
+      "detail": "3 nodes"
+    },
+    {
+      "name": "map-phone-dark: no page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "map-phone-dark: offline - no network requests",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "finishedAt": "2026-10-20T21:57:03.679Z",
+  "ok": true
+}
