@@ -1,5 +1,7 @@
 name: Full source proof
 on:
+  # Register the workflow on PRs; full jobs run only on schedule or dispatch.
+  pull_request:
   schedule:
     - cron: '17 5,17 * * *'
   workflow_dispatch:
@@ -16,7 +18,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   check:
-    if: github.event.repository.private == false
+    if: >-
+      github.event.repository.private == false &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
@@ -36,10 +40,14 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check
   native:
-    if: github.event.repository.private == false
+    if: >-
+      github.event.repository.private == false &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     uses: ./.github/workflows/native.yml
   artifacts:
-    if: github.event.repository.private == false
+    if: >-
+      github.event.repository.private == false &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     needs: [check, native]
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -130,7 +138,9 @@ jobs:
       - name: Deliberate notification drill failure
         run: exit 1
   notify:
-    if: failure() && github.event.repository.private == false
+    if: >-
+      failure() && github.event.repository.private == false &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     needs: [check, native, artifacts, drill]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
