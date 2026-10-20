@@ -1,0 +1,23 @@
+name: Source proof bootstrap
+on:
+  workflow_dispatch:
+    inputs:
+      drill:
+        description: Select source-review to run the source proof and notification drill
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: full-${{ github.run_id }}
+  cancel-in-progress: false
+jobs:
+  bootstrap:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    steps:
+      - name: Require the reviewed source branch
+        run: |
+          echo 'Bootstrap only. Dispatch full.yml against source-review for real proof.'
+          exit 1
