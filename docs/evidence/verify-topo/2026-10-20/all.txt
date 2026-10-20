@@ -6,7 +6,7 @@ PASS tool bun
 PASS tool cargo
 PASS tool python3
 PASS playwright installed in <checkout>
-INFO checkout 8355a09ef3dde0256acc480dc94266b09ed00d1d on verify/verification-skill
+INFO checkout a7e2712d15181358d5b830bc04f2be4dd3b5e138 on verify/verification-skill
 PASS public /health ok, source 58a686e6dec655161f0d225b538d0f03f991dfce, native 0.4.0
 INFO deployed source 58a686e6dec655161f0d225b538d0f03f991dfce is not in this checkout's history (unmerged change, newer deploy, or a deployment built from another repository)
 SKIP private deployment (n/a: set TOPO_VERIFY_PRIVATE_SETTINGS to your settings JSON)
@@ -23,7 +23,7 @@ PASS cli query-entity
 PASS cli query returns app.ts -> client.ts
 PASS cli query-revision
 PASS cli render
-PASS cli render keeps revision ae37ae255cab6f17d6002124cf36d662adedfa5485dc784464f9aa0f7c3e9405
+PASS cli render keeps revision 5d6fa538954a161bc1380e2e561afd4791544ae9ff4c12c3370861e128ce03e3
 PASS cli state
 PASS cli state wrote projects.md and projects.json
 PASS cli existing-output refused (exit 1): topo: Output already exists; use a fresh run directory
@@ -113,6 +113,6 @@ PASS site-phone-light: no page errors
 PASS site-phone-dark: home heading
 PASS site-phone-dark: demo embed present
 PASS site-phone-dark: no page errors
-PASS site-slow-network: demo usable on throttled phone - 1270 ms
+PASS site-slow-network: demo usable on throttled phone - 1377 ms
 SKIP sign-in (n/a: set TOPO_VERIFY_PRIVATE_SETTINGS and TOPO_VERIFY_OWNER_EMAIL)
-evidence: <runs>/pub3/evidence
+evidence: <runs>/pub4/evidence

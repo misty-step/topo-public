@@ -1,8 +1,8 @@
 topo 0.4.0 (2e892f9a1ccf4ec1352e19552ae2629a8a4e0d32)
 
-Installed <runs>/pub3-installed/bin/topo
+Installed <runs>/pub4-installed/bin/topo
 Add it to your shell PATH:
-  export PATH="<runs>/pub3-installed/bin:$PATH"
+  export PATH="<runs>/pub4-installed/bin:$PATH"
 
 In a Git repository:
   topo run --repo app=. --out topo-map

@@ -1,7 +1,7 @@
 {
   "mode": "map",
-  "target": "<runs>/pub3/map/index.html",
-  "startedAt": "2026-10-20T22:28:56.524Z",
+  "target": "<runs>/pub4/map/index.html",
+  "startedAt": "2026-10-20T23:03:54.962Z",
   "checks": [
     {
       "name": "map-desktop-light: title names Topo",
@@ -214,6 +214,6 @@
       "detail": ""
     }
   ],
-  "finishedAt": "2026-10-20T22:29:04.557Z",
+  "finishedAt": "2026-10-20T23:04:10.005Z",
   "ok": true
 }

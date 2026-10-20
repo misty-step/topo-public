@@ -1,7 +1,7 @@
 {
   "mode": "site",
   "target": "https://topo.mistystep.io",
-  "startedAt": "2026-10-20T22:29:10.827Z",
+  "startedAt": "2026-10-20T23:04:19.275Z",
   "checks": [
     {
       "name": "site: /health is ok",
@@ -131,7 +131,7 @@
     {
       "name": "site-slow-network: demo usable on throttled phone",
       "ok": true,
-      "detail": "1270 ms"
+      "detail": "1377 ms"
     }
   ],
   "identity": {
@@ -151,6 +151,6 @@
       "version": "0.4.0"
     }
   },
-  "finishedAt": "2026-10-20T22:29:17.188Z",
+  "finishedAt": "2026-10-20T23:04:25.807Z",
   "ok": true
 }

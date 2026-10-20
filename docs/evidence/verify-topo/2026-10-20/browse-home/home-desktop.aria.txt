@@ -7,7 +7,7 @@
       - /url: projects/index.html
     - group: Repos Partial 1 of 1
 - contentinfo:
-  - text: ae37ae25
+  - text: 5d6fa538
   - link "Catalogue":
     - /url: catalogue.json
   - group: Basis

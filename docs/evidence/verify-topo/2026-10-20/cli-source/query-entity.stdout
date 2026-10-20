@@ -90,12 +90,12 @@
       "to": "package:npm:react"
     }
   ],
-  "revision": "ae37ae255cab6f17d6002124cf36d662adedfa5485dc784464f9aa0f7c3e9405",
+  "revision": "5d6fa538954a161bc1380e2e561afd4791544ae9ff4c12c3370861e128ce03e3",
   "scope": null,
   "sources": [
     {
-      "date": "2026-10-20T22:28:56Z",
-      "head": "a94cbb41abb344c04d329b18216a1439bd64392b",
+      "date": "2026-10-20T23:03:54Z",
+      "head": "a3eeecf503a00611f0ebe7d5175e56d043b1d21d",
       "id": "source:example/beacon:web/src/app.ts",
       "label": "example/beacon/web/src/app.ts",
       "level": "config",

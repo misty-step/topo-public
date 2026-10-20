@@ -1,24 +1,24 @@
-$ env TOPO_INSTALL_DIR=<runs>/pub3-installed/bin sh <runs>/pub3-installed/install-topo.sh
+$ env TOPO_INSTALL_DIR=<runs>/pub4-installed/bin sh <runs>/pub4-installed/install-topo.sh
 exit 0
 stdout: topo 0.4.0 (2e892f9a1ccf4ec1352e19552ae2629a8a4e0d32)
 stdout: 
-stdout: Installed <runs>/pub3-installed/bin/topo
+stdout: Installed <runs>/pub4-installed/bin/topo
 stdout: Add it to your shell PATH:
-stdout:   export PATH="<runs>/pub3-installed/bin:$PATH"
+stdout:   export PATH="<runs>/pub4-installed/bin:$PATH"
 stdout: 
 stdout: In a Git repository:
 stdout:   topo run --repo app=. --out topo-map
 stdout: Then open topo-map/index.html.
 
-$ env TOPO_INSTALL_DIR=<runs>/pub3-installed/bin sh <runs>/pub3-installed/install-topo.sh
+$ env TOPO_INSTALL_DIR=<runs>/pub4-installed/bin sh <runs>/pub4-installed/install-topo.sh
 exit 1
-stderr: Already exists: <runs>/pub3-installed/bin/topo. Use --force to explicitly replace it, or choose TOPO_INSTALL_DIR.
+stderr: Already exists: <runs>/pub4-installed/bin/topo. Use --force to explicitly replace it, or choose TOPO_INSTALL_DIR.
 
-$ <runs>/pub3-installed/bin/topo --version
+$ <runs>/pub4-installed/bin/topo --version
 exit 0
 stdout: topo 0.4.0 (2e892f9a1ccf4ec1352e19552ae2629a8a4e0d32)
 
-$ <runs>/pub3-installed/bin/topo run --repo example/beacon=<runs>/pub3-installed/fixture --out <runs>/pub3-installed/map
+$ <runs>/pub4-installed/bin/topo run --repo example/beacon=<runs>/pub4-installed/fixture --out <runs>/pub4-installed/map
 exit 0
 stdout: {
 stdout:   "collections": [
@@ -27,13 +27,13 @@ stdout:       "coverage": "partial",
 stdout:       "dirty": false,
 stdout:       "enumerated_files": 6,
 stdout:       "errors": [],
-stdout:       "head": "60f57317cebe41cc3cd173e2ef672c2500f9088f",
+stdout:       "head": "5244269c0f4b7e00665bfe7ecdc8aed23e53de94",
 stdout:       "id": "collection:example/beacon",
 stdout:       "label": "example/beacon",
 stdout:       "limits": [
 stdout:         "Read-only source collection; no installs, tests, application execution, provider reads or model calls.",
 
-$ <runs>/pub3-installed/bin/topo scopes --graph <runs>/pub3-installed/map/graph.json
+$ <runs>/pub4-installed/bin/topo scopes --graph <runs>/pub4-installed/map/graph.json
 exit 0
 stdout: {
 stdout:   "module:example/beacon:api": {
@@ -48,7 +48,7 @@ stdout:       "file:example/beacon:api/src/orders.rs"
 stdout:     ]
 stdout:   },
 
-$ <runs>/pub3-installed/bin/topo query --graph <runs>/pub3-installed/map/graph.json --entity file:example/beacon:web/src/app.ts --direction dependencies
+$ <runs>/pub4-installed/bin/topo query --graph <runs>/pub4-installed/map/graph.json --entity file:example/beacon:web/src/app.ts --direction dependencies
 exit 0
 stdout: {
 stdout:   "entity": {
@@ -63,7 +63,7 @@ stdout:     "repo": "example/beacon",
 stdout:     "sources": [
 stdout:       "source:example/beacon:web/src/app.ts"
 
-$ <runs>/pub3-installed/bin/topo query --graph <runs>/pub3-installed/map/graph.json --scope repo:example/beacon --revision f4e4d6276d32f3f1753da58be6c9f10b4dddc1d5fa74efa2447935513d8ade57
+$ <runs>/pub4-installed/bin/topo query --graph <runs>/pub4-installed/map/graph.json --scope repo:example/beacon --revision 269e463a26b4692388bd2c813ff2188e929b46926ab98467a2b7294883d36e38
 exit 0
 stdout: {
 stdout:   "collections": [
@@ -72,50 +72,50 @@ stdout:       "coverage": "partial",
 stdout:       "dirty": false,
 stdout:       "enumerated_files": 6,
 stdout:       "errors": [],
-stdout:       "head": "60f57317cebe41cc3cd173e2ef672c2500f9088f",
+stdout:       "head": "5244269c0f4b7e00665bfe7ecdc8aed23e53de94",
 stdout:       "id": "collection:example/beacon",
 stdout:       "label": "example/beacon",
 stdout:       "limits": [
 stdout:         "Read-only source collection; no installs, tests, application execution, provider reads or model calls.",
 
-$ <runs>/pub3-installed/bin/topo render --graph <runs>/pub3-installed/map/graph.json --out <runs>/pub3-installed/rendered
+$ <runs>/pub4-installed/bin/topo render --graph <runs>/pub4-installed/map/graph.json --out <runs>/pub4-installed/rendered
 exit 0
 
-$ <runs>/pub3-installed/bin/topo state --input <runs>/pub3-installed/state.json --out <runs>/pub3-installed/state-out
+$ <runs>/pub4-installed/bin/topo state --input <runs>/pub4-installed/state.json --out <runs>/pub4-installed/state-out
 exit 0
 stdout: {
 stdout:   "archive": 0,
 stdout:   "focus": 0,
 stdout:   "maintain": 1,
-stdout:   "output": "<runs>/pub3-installed/state-out",
+stdout:   "output": "<runs>/pub4-installed/state-out",
 stdout:   "repositories": 1
 stdout: }
 
-$ <runs>/pub3-installed/bin/topo run --repo example/beacon=<runs>/pub3-installed/fixture --out <runs>/pub3-installed/map
+$ <runs>/pub4-installed/bin/topo run --repo example/beacon=<runs>/pub4-installed/fixture --out <runs>/pub4-installed/map
 exit 1
 stderr: topo: Output already exists; use a fresh run directory
 
-$ <runs>/pub3-installed/bin/topo query --graph <runs>/pub3-installed/map/graph.json --scope module:example/beacon:nope
+$ <runs>/pub4-installed/bin/topo query --graph <runs>/pub4-installed/map/graph.json --scope module:example/beacon:nope
 exit 1
 stderr: topo: Unknown scope
 
-$ <runs>/pub3-installed/bin/topo query --graph <runs>/pub3-installed/map/graph.json --revision 0000
+$ <runs>/pub4-installed/bin/topo query --graph <runs>/pub4-installed/map/graph.json --revision 0000
 exit 1
 stderr: topo: Graph revision mismatch
 
-$ <runs>/pub3-installed/bin/topo run --repo x=<runs>/pub3-installed/not-a-repo --out <runs>/pub3-installed/out-not-a-repo
+$ <runs>/pub4-installed/bin/topo run --repo x=<runs>/pub4-installed/not-a-repo --out <runs>/pub4-installed/out-not-a-repo
 exit 1
 stderr: topo: Git rev-parse failed; no absence established
 
-$ <runs>/pub3-installed/bin/topo run --repo x=<runs>/pub3-installed/empty-repo --out <runs>/pub3-installed/out-empty-repo
+$ <runs>/pub4-installed/bin/topo run --repo x=<runs>/pub4-installed/empty-repo --out <runs>/pub4-installed/out-empty-repo
 exit 1
 stderr: topo: Git rev-parse failed; no absence established
 
-$ <runs>/pub3-installed/bin/topo run --repo ../x=<runs>/pub3-installed/fixture --out <runs>/pub3-installed/out-bad-namespace
+$ <runs>/pub4-installed/bin/topo run --repo ../x=<runs>/pub4-installed/fixture --out <runs>/pub4-installed/out-bad-namespace
 exit 1
 stderr: topo: Invalid caller namespace
 
-$ <runs>/pub3-installed/bin/topo query --graph <runs>/pub3-installed/tampered.json
+$ <runs>/pub4-installed/bin/topo query --graph <runs>/pub4-installed/tampered.json
 exit 1
 stderr: topo: Graph revision does not match its content
 

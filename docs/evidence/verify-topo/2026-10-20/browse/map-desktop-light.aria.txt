@@ -12,7 +12,7 @@
     - option "Module · example/beacon / web"
     - option "Module · example/beacon / web/src"
     - option "Repo · example/beacon"
-  - text: Read-only 2026-10-20T22:28:56Z, 3 nodes, 4 relationships
+  - text: Read-only 2026-10-20T23:03:54Z, 3 nodes, 4 relationships
   - link "Review":
     - /url: index.html
   - button "Fullscreen"
@@ -50,9 +50,9 @@
       - button "inferred 0" [disabled] [pressed]
   - complementary "Details":
     - heading "Overview" [level=2]
-    - text: Generated 2026-10-20T22:28:56Z
+    - text: Generated 2026-10-20T23:03:54Z
     - region "Evidence inspector":
-      - paragraph: Selected repositories · 3 visible entities/groups from 9 underlying entities; 4 projected relationships from 6 exact edges. Source-only declarations and dated imports, not live health. Graph ae37ae255cab.
+      - paragraph: Selected repositories · 3 visible entities/groups from 9 underlying entities; 4 projected relationships from 6 exact edges. Source-only declarations and dated imports, not live health. Graph 5d6fa538954a.
       - text: Focus 1 Dependencies 2 Relationships 4 Provider, documentary, inferred 0, 4, 0 Sources 5 Open gaps 6
       - heading "Reading the map" [level=3]
       - list:

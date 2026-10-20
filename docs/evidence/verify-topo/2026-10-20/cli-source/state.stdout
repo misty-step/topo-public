@@ -2,6 +2,6 @@
   "archive": 0,
   "focus": 0,
   "maintain": 1,
-  "output": "<runs>/pub3/state-out",
+  "output": "<runs>/pub4/state-out",
   "repositories": 1
 }
