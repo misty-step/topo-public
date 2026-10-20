@@ -234,16 +234,17 @@ async function driveGate(browser) {
   await shot(page, 'gate-signed-out');
   await aria(page, 'gate-signed-out');
   // Wrong identity: a forged Access cookie must not reach assets.
-  // Access refuses with a redirect to the team's login path, or 401/403. A 200, 5xx or other redirect is not a refusal.
+  // Access refuses with a redirect to the team's login path. A 401/403 could come from the Worker behind it, so it does
+  // not prove Access is in front; a 200, 5xx or other redirect is not a refusal either.
   const team = process.env.TOPO_VERIFY_ACCESS_TEAM;
   const refused = r => {
     const location = r.headers.get('location') || '';
-    return [401, 403].includes(r.status) || (r.status >= 300 && r.status < 400 && Boolean(team)
-      && location.startsWith(`${team}/cdn-cgi/access/login/`));
+    return (r.status >= 300 && r.status < 400 && Boolean(team)
+      && new URL(location, target).href.startsWith(`${team}/cdn-cgi/access/login/`));
   };
   const anonymous = await fetch(target, { redirect: 'manual' });
   check('gate: anonymous request is redirected to the Access team login', refused(anonymous),
-    `${anonymous.status} ${new URL(anonymous.headers.get('location') || 'about:blank').origin}`);
+    `${anonymous.status} ${new URL(anonymous.headers.get('location') || '/', target).origin}`);
   const forged = await fetch(target, { redirect: 'manual', headers: { cookie: 'CF_Authorization=forged.verify-topo.token' } });
   check('gate: forged session cookie is refused by Access', refused(forged), String(forged.status));
   const wrongToken = await fetch(target, { redirect: 'manual', headers: { 'CF-Access-Client-Id': 'verify-topo.access', 'CF-Access-Client-Secret': 'not-a-secret' } });
@@ -293,7 +294,7 @@ async function driveOwner() {
     return r.ok ? r.json() : { status: r.status };
   }).catch(e => ({ error: e.message }));
   result.identity = { email: identity.email, idp: identity.idp && { type: identity.idp.type }, status: identity.status };
-  check('owner: Access identity is the real owner', identity.email === owner, identity.email || JSON.stringify(result.identity));
+  check('owner: Access identity is the real owner', (identity.email || '').toLowerCase() === owner.toLowerCase(), identity.email || JSON.stringify(result.identity));
   const idpType = process.env.TOPO_VERIFY_OWNER_IDP_TYPE;
   if (idpType) check(`owner: signed in through the ${idpType} login method`, identity.idp && identity.idp.type === idpType, identity.idp && identity.idp.type);
   // Owner-only page. Record structure only; the private maps are personal content.

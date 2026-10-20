@@ -74,8 +74,10 @@ Doctor is read-only. Without `--live` it checks:
 - the Access application for the private host has the audience `vars.ACCESS_AUD`;
 - its allow rules admit exactly the address set in `TOPO_VERIFY_ALLOWED_EMAILS`.
   That is a comma-separated list of addresses or sha256 digests of their
-  lowercase form; the default is the owner only. It fails on any everyone,
-  domain or group rule, on any `require` or `exclude` condition, on a
+  lowercase form; the default is the owner only, and the owner must be in the
+  set. Digests of email addresses are guessable, so never commit a real list.
+  It fails on any everyone, domain or group rule, on any `require` or
+  `exclude` condition or `deny` policy, on a
   non-service-token non-identity rule, and on any bypass policy;
 - it allows exactly one login method, named `TOPO_VERIFY_OWNER_IDP` when that
   is set. An empty list, which admits every method, fails;
@@ -129,9 +131,11 @@ Proof standards:
 - Private maps are personal content. The owner drive records only identity,
   manifest schema, timestamps and counts. Never screenshot or commit private map
   pages. Committed evidence goes under `docs/evidence/verify-topo/<date>/`.
-- This repository is public. Commit only `evidence/` from runs without
-  private settings. Never commit `private-evidence/` or `doctor --live`
-  output, because they name the operator's private host and owner. Replace
+- This repository is public. Commit only `evidence/` and printed output from
+  runs without private settings. With `TOPO_VERIFY_PRIVATE_SETTINGS` set, the
+  printed output of `doctor`, `sign-in` and `all` names the operator's Access
+  team, private host and owner. Never commit that output, or
+  `private-evidence/`. Replace
   absolute home paths with `~` before committing, and keep operator proof in
   the operator's own private records.
 
@@ -143,7 +147,9 @@ Proof standards:
 ```
 
 Cleanup removes the installed binary, fixture repositories, maps, the home and
-scratch files in `$TOPO_VERIFY_RUN`. It never removes `evidence/`. Every
+scratch files in `$TOPO_VERIFY_RUN`. It never removes `evidence/` or
+`private-evidence/`. Copy the sign-in proof in `private-evidence/` to the
+operator's private records before you delete the run directory. Every
 browser the helper starts closes when its drive ends. No server is started, so
 there is nothing to kill. The owner profile at
 `~/.cache/tmp/verify-topo/owner-profile` holds an Access session for the
