@@ -21,7 +21,7 @@ jobs:
     if: >-
       github.event.repository.private == false &&
       (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, hetzner-ci, topo-public-ci]
     timeout-minutes: 20
     env:
       CARGO_BUILD_JOBS: '2'
@@ -142,7 +142,7 @@ jobs:
       failure() && github.event.repository.private == false &&
       (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     needs: [check, native, artifacts, drill]
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, hetzner-ci, topo-public-ci]
     timeout-minutes: 5
     permissions:
       contents: read
