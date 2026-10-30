@@ -49,7 +49,7 @@ jobs:
       github.event.repository.private == false &&
       (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     needs: [check, native]
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, hetzner-ci, topo-public-ci]
     timeout-minutes: 40
     env:
       CARGO_BUILD_JOBS: '2'
@@ -132,7 +132,7 @@ jobs:
           retention-days: 14
   drill:
     if: github.event.repository.private == false && github.event_name == 'workflow_dispatch' && inputs.drill
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, hetzner-ci, topo-public-ci]
     timeout-minutes: 1
     steps:
       - name: Deliberate notification drill failure
